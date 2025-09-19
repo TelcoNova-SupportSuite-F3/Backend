@@ -1,0 +1,236 @@
+# =====================================================
+# TELCONOVA SUPPORTSUITE - CONFIGURACIÓN PRINCIPAL
+# Feature 3: Seguimiento de Órdenes en Proceso
+# =====================================================
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+    encoding:
+      charset: UTF-8
+      force: true
+  error:
+    include-stacktrace: never
+    include-message: always
+    include-binding-errors: always
+
+spring:
+  application:
+    name: TelcoNova-SupportSuite
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  # Configuración de Base de Datos
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:telconova_db}
+    username: ${DB_USER:telconova_app}
+    password: ${DB_PASSWORD:TelcoN0v4_2025!}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      validation-timeout: 5000
+      max-lifetime: 1200000
+      leak-detection-threshold: 60000
+      connection-test-query: SELECT 1
+
+  # Configuración JPA/Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: false
+        generate_statistics: false
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+        connection:
+          provider_disables_autocommit: true
+
+  # Configuración de Flyway
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    locations: classpath:db/migration
+    schemas: telconova
+    table: schema_version
+
+  # Configuración de Jackson
+  jackson:
+    time-zone: America/Bogota
+    locale: es_CO
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+  # Configuración de Validación
+  validation:
+    enabled: true
+
+  # Configuración de Multipart (para subida de archivos)
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+      file-size-threshold: 2KB
+
+  # Configuración de Cache
+  cache:
+    type: simple
+    cache-names:
+      - usuarios
+      - materiales
+      - ordenes
+
+  # Configuración de Logs
+  output:
+    ansi:
+      enabled: always
+
+# =====================================================
+# CONFIGURACIÓN DE LOGGING
+# =====================================================
+logging:
+  level:
+    root: INFO
+    com.telconova: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+  file:
+    name: logs/telconova-supportsuite.log
+    max-size: 100MB
+    max-history: 30
+
+# =====================================================
+# CONFIGURACIÓN DE SEGURIDAD JWT
+# =====================================================
+security:
+  jwt:
+    secret-key: ${JWT_SECRET:TelcoNova2025_SupportSuite_SecretKey_MuySeguro_NoCompartir_123456}
+    expiration: ${JWT_EXPIRATION:86400000} # 24 horas en millisegundos
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 días
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:4200}
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
+
+# =====================================================
+# CONFIGURACIÓN DE ALMACENAMIENTO DE ARCHIVOS
+# =====================================================
+storage:
+  type: ${STORAGE_TYPE:local} # local, s3
+  local:
+    upload-dir: ${LOCAL_UPLOAD_DIR:./uploads}
+  s3:
+    bucket-name: ${S3_BUCKET_NAME:telconova-evidence}
+    region: ${S3_REGION:us-east-1}
+    access-key: ${S3_ACCESS_KEY:}
+    secret-key: ${S3_SECRET_KEY:}
+  max-file-size: 10MB
+  allowed-types:
+    - image/jpeg
+    - image/jpg
+    - image/png
+
+# =====================================================
+# CONFIGURACIÓN DE ACTUATOR Y MÉTRICAS
+# =====================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,flyway,env
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        descriptions: true
+        step: 10s
+    tags:
+      application: ${spring.application.name}
+      environment: ${spring.profiles.active}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 100ms,200ms,300ms,500ms,1s
+
+# =====================================================
+# CONFIGURACIÓN DE SWAGGER/OpenAPI
+# =====================================================
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    show-extensions: true
+    show-common-extensions: true
+  packages-to-scan: com.telconova.supportsuite.infraestructura.adaptadores.entrada.web
+
+# =====================================================
+# CONFIGURACIÓN PERSONALIZADA DE LA APLICACIÓN
+# =====================================================
+telconova:
+  supportsuite:
+    version: 1.0.0
+    environment: ${spring.profiles.active}
+    features:
+      feature3:
+        enabled: true
+        description: "Seguimiento de Órdenes en Proceso"
+    business-rules:
+      email-domain: "@telconova.com"
+      max-comment-length: 500
+      allowed-states-for-material-addition:
+        - EN_PROCESO
+      required-states-for-completion:
+        - EN_PROCESO
+        - PAUSADA
+      evidence-requirements:
+        comment-or-photo-required: true
+    notifications:
+      enabled: true
+      channels:
+        email: true
+        sms: false
+    audit:
+      enabled: true
+      retention-days: 365

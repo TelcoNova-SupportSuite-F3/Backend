@@ -1,0 +1,75 @@
+# =====================================================
+# CONFIGURACIÓN DE DESARROLLO
+# =====================================================
+
+server:
+  port: 8080
+
+spring:
+  # Base de datos local para desarrollo
+  datasource:
+    url: jdbc:postgresql://localhost:5432/telconova
+    username: postgres
+    password: postgres
+    hikari:
+      maximum-pool-size: 10
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        generate_statistics: true
+
+  # Configuración de desarrollo para archivos
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+# Logging más detallado en desarrollo
+logging:
+  level:
+    com.telconova: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
+
+# Configuración de seguridad más permisiva para desarrollo
+security:
+  jwt:
+    expiration: 43200000 # 12 horas para desarrollo
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:4200,http://localhost:8081
+
+# Almacenamiento local para desarrollo
+storage:
+  type: local
+  local:
+    upload-dir: ./uploads-dev
+
+# Métricas y actuator más abiertos en desarrollo
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+# Configuración específica para desarrollo
+telconova:
+  supportsuite:
+    environment: desarrollo
+    debug:
+      enabled: true
+      show-stack-traces: true
+    test-data:
+      create-sample-data: true
