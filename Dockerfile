@@ -1,18 +1,12 @@
 # =====================================================
 # ETAPA DE CONSTRUCCIÓN
 # =====================================================
-FROM eclipse-temurin:21-jdk-slim as builder
+FROM maven:3.9-openjdk-21-slim AS builder
 
 # Información del mantenedor
 LABEL maintainer="desarrollo@telconova.com"
 LABEL version="1.0.0"
 LABEL description="TelcoNova SupportSuite - Sistema de Gestión de Soporte Técnico"
-
-# Instalar Maven
-RUN apt-get update && \
-    apt-get install -y maven && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
 
 # Establecer directorio de trabajo
 WORKDIR /app
@@ -32,7 +26,7 @@ RUN mvn clean package -DskipTests
 # =====================================================
 # IMAGEN FINAL
 # =====================================================
-FROM eclipse-temurin:21-jre-slim
+FROM openjdk:21-jre-slim
 
 # Crear usuario no-root para seguridad
 RUN groupadd -r telconova && useradd -r -g telconova telconova
