@@ -1,4 +1,7 @@
-FROM openjdk:21-jdk-slim as builder
+# =====================================================
+# ETAPA DE CONSTRUCCIÓN
+# =====================================================
+FROM eclipse-temurin:21-jdk-slim as builder
 
 # Información del mantenedor
 LABEL maintainer="desarrollo@telconova.com"
@@ -14,8 +17,13 @@ RUN apt-get update && \
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de configuración de Maven
+# Copiar archivos de configuración de Maven primero (para cache de capas)
 COPY pom.xml .
+
+# Descargar dependencias (se cachea si pom.xml no cambia)
+RUN mvn dependency:go-offline -B
+
+# Copiar código fuente
 COPY src ./src
 
 # Construir la aplicación
@@ -24,8 +32,7 @@ RUN mvn clean package -DskipTests
 # =====================================================
 # IMAGEN FINAL
 # =====================================================
-
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jre-slim
 
 # Crear usuario no-root para seguridad
 RUN groupadd -r telconova && useradd -r -g telconova telconova
