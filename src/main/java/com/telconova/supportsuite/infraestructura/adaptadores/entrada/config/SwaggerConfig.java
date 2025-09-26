@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,9 +21,12 @@ import java.util.List;
 @Configuration
 public class SwaggerConfig {
 
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
+
     @Bean
     public OpenAPI customOpenAPI() {
-        return new OpenAPI()
+        OpenAPI openAPI = new OpenAPI()
                 .info(new Info()
                         .title("TelcoNova SupportSuite API")
                         .version("1.0.0")
@@ -46,6 +50,10 @@ public class SwaggerConfig {
                             1. Obtén tu token haciendo POST a `/auth/login`
                             2. Incluye el token en el header: `Authorization: Bearer {tu-token}`
                             3. Solo se permiten emails del dominio @telconova.com
+                            
+                            ### Nota importante:
+                            - Asegúrate de seleccionar el servidor correcto en el dropdown de arriba
+                            - Para producción usa: https://backendtelconova-production.up.railway.app
                             """)
                         .contact(new Contact()
                                 .name("Equipo de Desarrollo TelcoNova")
@@ -54,11 +62,6 @@ public class SwaggerConfig {
                         .license(new License()
                                 .name("Propietario")
                                 .url("https://telconova.com/licencia")))
-                .servers(List.of(
-                        new Server().url("http://localhost:8080/api/v1").description("Servidor de Desarrollo"),
-                        new Server().url("https://api-test.telconova.com/api/v1").description("Servidor de Pruebas"),
-                        new Server().url("https://api.telconova.com/api/v1").description("Servidor de Producción")
-                ))
                 .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
                 .components(new Components()
                         .addSecuritySchemes("Bearer Authentication",
@@ -71,5 +74,31 @@ public class SwaggerConfig {
                                 .type("string")
                                 .format("binary")
                                 .description("Archivo para subir")));
+
+        // Configurar servidores según el perfil activo
+        if ("prod".equals(activeProfile)) {
+            // En producción, Railway primero
+            openAPI.servers(List.of(
+                    new Server()
+                            .url("https://backendtelconova-production.up.railway.app")
+                            .description("🚀 Servidor de Producción (Railway)"),
+                    new Server()
+                            .url("http://localhost:8080")
+                            .description("💻 Servidor de Desarrollo Local")
+            ));
+        } else {
+            // En desarrollo, localhost primero
+            openAPI.servers(List.of(
+                    new Server()
+                            .url("http://localhost:8080")
+                            .description("💻 Servidor de Desarrollo Local"),
+                    new Server()
+                            .url("https://backendtelconova-production.up.railway.app")
+                            .description("🚀 Servidor de Producción (Railway)")
+            ));
+        }
+
+        return openAPI;
+
     }
 }

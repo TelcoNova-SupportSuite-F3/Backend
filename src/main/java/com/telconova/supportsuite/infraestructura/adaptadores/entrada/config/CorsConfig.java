@@ -1,5 +1,7 @@
 package com.telconova.supportsuite.infraestructura.adaptadores.entrada.config;
 
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +15,7 @@ import java.util.List;
 /**
  * Configuración CORS
  */
+@Slf4j
 @Configuration
 public class CorsConfig {
 
@@ -30,6 +33,12 @@ public class CorsConfig {
 
     @Value("${security.cors.max-age:3600}")
     private long maxAge;
+
+    @PostConstruct
+    public void logCorsConfig() {
+        log.info("CORS Origins configurados: {}", allowedOrigins);
+        log.info("CORS Methods configurados: {}", allowedMethods);
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
