@@ -53,7 +53,8 @@ public class SwaggerConfig {
                             
                             ### Nota importante:
                             - Asegúrate de seleccionar el servidor correcto en el dropdown de arriba
-                            - Para producción usa: https://backendtelconova-production.up.railway.app
+                            - Para producción usa: Railway (primera opción)
+                            - Los endpoints de la API NO usan prefijo /api/v1 para auth
                             """)
                         .contact(new Contact()
                                 .name("Equipo de Desarrollo TelcoNova")
@@ -75,7 +76,7 @@ public class SwaggerConfig {
                                 .format("binary")
                                 .description("Archivo para subir")));
 
-        // Configurar servidores según el perfil activo
+        // IMPORTANTE: Usar SOLO las URLs reales que funcionan
         if ("prod".equals(activeProfile)) {
             // En producción, Railway primero
             openAPI.servers(List.of(
@@ -99,6 +100,5 @@ public class SwaggerConfig {
         }
 
         return openAPI;
-
     }
 }
