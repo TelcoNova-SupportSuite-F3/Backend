@@ -16,7 +16,7 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value("${security.cors.allowed-origins:http://localhost:3000,http://localhost:4200}")
+    @Value("${security.cors.allowed-origins:https://backendtelconova-production.up.railway.app,http://localhost:4200,http://localhost:3000}")
     private String allowedOrigins;
 
     @Value("${security.cors.allowed-methods:GET,POST,PUT,DELETE,OPTIONS,PATCH}")
@@ -39,6 +39,9 @@ public class CorsConfig {
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
         configuration.setAllowedOriginPatterns(origins);
 
+        configuration.addAllowedOriginPattern("https://backendtelconova-production.up.railway.app");
+        configuration.addAllowedOriginPattern("http://localhost:8080");
+
         // Configurar métodos permitidos
         List<String> methods = Arrays.asList(allowedMethods.split(","));
         configuration.setAllowedMethods(methods);
@@ -51,6 +54,7 @@ public class CorsConfig {
             configuration.setAllowedHeaders(headers);
         }
 
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Total-Count"));
         configuration.setAllowCredentials(allowCredentials);
         configuration.setMaxAge(maxAge);
 

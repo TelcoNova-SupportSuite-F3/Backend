@@ -72,6 +72,10 @@ security:
     expiration: 3600000 # 1 hora en producción
   cors:
     allowed-origins: ${CORS_ORIGINS}
+    allowed-methods: ${ALLOWED_METHODS}}
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
 
 # Métricas limitadas en producción
 management:
@@ -90,3 +94,26 @@ telconova:
     debug:
       enabled: false
       show-stack-traces: false
+
+# =====================================================
+# CONFIGURACIÓN DE SWAGGER PARA PRODUCCIÓN
+# =====================================================
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui/index.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    show-extensions: true
+    show-common-extensions: true
+    # CLAVE: Configurar el servidor de producción
+    servers:
+      - url: https://backendtelconova-production.up.railway.app
+        description: Servidor de Producción
+      - url: http://localhost:8080
+        description: Servidor de Desarrollo
+  packages-to-scan: com.telconova.supportsuite.infraestructura.adaptadores.entrada.web
