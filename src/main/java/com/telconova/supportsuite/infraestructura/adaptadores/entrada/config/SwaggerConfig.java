@@ -76,7 +76,6 @@ public class SwaggerConfig {
                                 .format("binary")
                                 .description("Archivo para subir")));
 
-        // IMPORTANTE: Usar SOLO las URLs reales que funcionan
         if ("prod".equals(activeProfile)) {
             // En producción, Railway primero
             openAPI.servers(List.of(
