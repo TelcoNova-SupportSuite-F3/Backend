@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/validate").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/actuator/info").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
 
                         // Swagger UI (sin /api/v1)
                         .requestMatchers("/swagger-ui/**").permitAll()
