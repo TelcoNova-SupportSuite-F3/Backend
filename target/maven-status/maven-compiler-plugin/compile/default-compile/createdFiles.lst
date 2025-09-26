@@ -9,6 +9,7 @@ com\telconova\supportsuite\compartido\utilidades\ArchivoUtil.class
 com\telconova\supportsuite\aplicacion\servicios\OrdenTrabajoService.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\entidades\UsuarioEntity.class
 com\telconova\supportsuite\compartido\excepciones\ErrorResponse$ErrorResponseBuilder.class
+com\telconova\supportsuite\dominio\excepciones\OrdenFinalizadaExcepcion.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\entidades\MaterialEntity.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\entidades\OrdenTrabajoEntity.class
 com\telconova\supportsuite\aplicacion\puertos\entrada\IMaterialService.class
@@ -41,6 +42,7 @@ com\telconova\supportsuite\aplicacion\dto\response\MaterialResponse$MaterialResp
 com\telconova\supportsuite\aplicacion\dto\request\RegistrarEvidenciaRequest.class
 com\telconova\supportsuite\aplicacion\dto\response\EvidenciaResponse.class
 com\telconova\supportsuite\aplicacion\puertos\salida\IUsuarioRepository.class
+com\telconova\supportsuite\infraestructura\adaptadores\salida\almacenamiento\CloudinaryAlmacenamientoImpl.class
 com\telconova\supportsuite\aplicacion\servicios\EvidenciaService.class
 com\telconova\supportsuite\infraestructura\configuracion\MetricsConfig.class
 com\telconova\supportsuite\dominio\entidades\OrdenTrabajo$OrdenTrabajoBuilder.class
@@ -75,6 +77,7 @@ com\telconova\supportsuite\aplicacion\puertos\salida\IAlmacenamientoArchivos.cla
 com\telconova\supportsuite\compartido\utilidades\ValidacionUtil.class
 com\telconova\supportsuite\compartido\excepciones\ErrorResponse$ErrorCampo.class
 com\telconova\supportsuite\infraestructura\adaptadores\entrada\web\EvidenciaController.class
+com\telconova\supportsuite\infraestructura\configuracion\StorageConfiguration.class
 com\telconova\supportsuite\dominio\valueobjects\NumeroOrden.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\UsuarioRepositoryImpl.class
 com\telconova\supportsuite\aplicacion\servicios\OrdenTrabajoService$1.class
