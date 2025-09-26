@@ -1,5 +1,5 @@
 # Etapa de construcción
-FROM maven:3.9.5-openjdk-21 AS build
+FROM maven:3.9.11-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
 # Copiar archivos de configuración de Maven
@@ -15,14 +15,11 @@ COPY src ./src
 RUN mvn clean package -DskipTests -B
 
 # Etapa de ejecución
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Instalar curl para healthchecks
-RUN apt-get update && \
-    apt-get install -y curl && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
 # Crear usuario no-root para seguridad
 RUN groupadd -r telconova && useradd -r -g telconova telconova
