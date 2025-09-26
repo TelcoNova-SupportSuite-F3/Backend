@@ -22,7 +22,7 @@ WORKDIR /app
 RUN apk add --no-cache curl
 
 # Crear usuario no-root para seguridad
-RUN groupadd -r telconova && useradd -r -g telconova telconova
+RUN addgroup -S telconova && adduser -S -G telconova telconova
 
 # Crear directorios necesarios
 RUN mkdir -p /app/logs /app/uploads && \
