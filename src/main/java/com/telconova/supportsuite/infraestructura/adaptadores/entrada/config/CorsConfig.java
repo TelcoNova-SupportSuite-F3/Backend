@@ -45,25 +45,37 @@ public class CorsConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // Configurar orígenes permitidos
-        List<String> origins = Arrays.asList(allowedOrigins.split(","));
-        configuration.setAllowedOriginPatterns(origins);
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .toList();
 
-        configuration.addAllowedOriginPattern("https://backendtelconova-production.up.railway.app");
-        configuration.addAllowedOriginPattern("http://localhost:8080");
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "https://backendtelconova-production.up.railway.app",
+                "https://*.up.railway.app",
+                "http://localhost:*",
+                "https://localhost:*"
+        ));
 
-        // Configurar métodos permitidos
-        List<String> methods = Arrays.asList(allowedMethods.split(","));
-        configuration.setAllowedMethods(methods);
-
-        // Configurar headers permitidos
-        if ("*".equals(allowedHeaders)) {
-            configuration.setAllowedHeaders(List.of("*"));
-        } else {
-            List<String> headers = Arrays.asList(allowedHeaders.split(","));
-            configuration.setAllowedHeaders(headers);
+        for (String origin : origins) {
+            configuration.addAllowedOriginPattern(origin);
         }
 
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Total-Count"));
+        // Configurar métodos permitidos
+        List<String> methods = Arrays.stream(allowedMethods.split(","))
+                .map(String::trim)
+                .toList();
+        configuration.setAllowedMethods(methods);
+
+        configuration.setAllowedHeaders(List.of("*"));
+
+        configuration.setExposedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "X-Total-Count",
+                "Access-Control-Allow-Origin",
+                "Access-Control-Allow-Credentials"
+        ));
+
         configuration.setAllowCredentials(allowCredentials);
         configuration.setMaxAge(maxAge);
 

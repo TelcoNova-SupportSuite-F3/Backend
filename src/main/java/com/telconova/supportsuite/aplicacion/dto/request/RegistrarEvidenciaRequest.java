@@ -17,15 +17,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @AllArgsConstructor
 @Schema(description = "Datos para registrar evidencia en una orden de trabajo")
 public class RegistrarEvidenciaRequest {
-/*
-    @Size(max = 500, message = "El comentario no puede exceder 500 caracteres")
-    @Schema(description = "Comentario de la evidencia (máximo 500 caracteres)",
-            example = "Instalación completada satisfactoriamente. Cliente conforme.")
-    private String comentario;
-
-    @Schema(description = "Archivo de foto como evidencia (JPG, JPEG, PNG)")
-    private MultipartFile foto;*/
-
 
     @Size(max = 500, message = "El comentario no puede exceder 500 caracteres")
     @Schema(

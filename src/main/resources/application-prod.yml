@@ -104,7 +104,6 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     enabled: true
-
     operations-sorter: method
     tags-sorter: alpha
     display-request-duration: true

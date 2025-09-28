@@ -172,10 +172,10 @@ public class CloudinaryAlmacenamientoImpl implements IAlmacenamientoArchivos {
                     ". Solo se permiten: " + String.join(", ", ConfiguracionConstantes.TIPOS_MIME_PERMITIDOS));
         }
 
-        if (archivo.getSize() > ConfiguracionConstantes.TAMAANO_MAXIMO_ARCHIVO) {
+        if (archivo.getSize() > ConfiguracionConstantes.TAMANO_MAXIMO_ARCHIVO) {
             throw new IllegalArgumentException("Archivo demasiado grande. Tamaño actual: " +
                     formatearTamano(archivo.getSize()) + ", Máximo permitido: " +
-                    formatearTamano(ConfiguracionConstantes.TAMAANO_MAXIMO_ARCHIVO));
+                    formatearTamano(ConfiguracionConstantes.TAMANO_MAXIMO_ARCHIVO));
         }
 
         log.debug("Archivo validado correctamente: {} - {} - {}",

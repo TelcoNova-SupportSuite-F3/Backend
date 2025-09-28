@@ -19,22 +19,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @AllArgsConstructor
 @Schema(description = "Datos requeridos para el inicio de sesión")
 public class LoginRequest {
-
-/*    @NotBlank(message = "El email es obligatorio")
-    @Email(message = "El formato del email no es válido")
-    @Schema(description = "Email del usuario (debe ser @telconova.com)",
-            example = "juan.perez@telconova.com",
-            required = true)
-    private String email;
-
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
-    @Schema(description = "Contraseña del usuario",
-            example = "miContraseña123",
-            required = true)
-    private String contrasena;*/
-
-
     @Schema(description = "Email del usuario", example = "juan.perez@telconova.com")
     @NotBlank(message = "El email es obligatorio")
     @Email(message = "El formato del email no es válido")

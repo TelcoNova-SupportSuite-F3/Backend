@@ -37,7 +37,7 @@ public class ArchivoUtil {
      * Valida el tamaño del archivo
      */
     public static boolean esTamanoValido(long tamano) {
-        return tamano > 0 && tamano <= ConfiguracionConstantes.TAMAANO_MAXIMO_ARCHIVO;
+        return tamano > 0 && tamano <= ConfiguracionConstantes.TAMANO_MAXIMO_ARCHIVO;
     }
 
     /**

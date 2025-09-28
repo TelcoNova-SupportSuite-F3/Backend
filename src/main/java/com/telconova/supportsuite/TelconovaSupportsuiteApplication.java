@@ -45,35 +45,17 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
                         name = "Propietario",
                         url = "https://telconova.com/licencia"
                 )
-        ),
-        servers = {
-                @Server(
-                        description = "Servidor de Desarrollo",
-                        url = "http://localhost:8080"
-                ),
-                @Server(
-                        description = "Servidor de Pruebas",
-                        url = "https://api-test.telconova.com"
-                ),
-                @Server(
-                        description = "Servidor de Producción",
-                        url = "https://api.telconova.com"
-                )
-        }
+        )
 )
 public class TelconovaSupportsuiteApplication {
 
     public static void main(String[] args) {
         System.setProperty("spring.application.name", "TelcoNova SupportSuite");
-
         System.setProperty("user.timezone", "America/Bogota");
-
         System.setProperty("file.encoding", "UTF-8");
 
         SpringApplication app = new SpringApplication(TelconovaSupportsuiteApplication.class);
-
         app.setBannerMode(org.springframework.boot.Banner.Mode.CONSOLE);
-
         app.run(args);
 
         log.info("""

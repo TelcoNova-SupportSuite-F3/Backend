@@ -12,7 +12,7 @@ public class ConfiguracionConstantes {
     public static final String JWT_CLAIM_EMAIL = "email";
 
     // Constantes de archivos
-    public static final long TAMAANO_MAXIMO_ARCHIVO = 10 * 1024 * 1024; // 10MB
+    public static final long TAMANO_MAXIMO_ARCHIVO = 10 * 1024 * 1024; // 10MB
     public static final String[] TIPOS_MIME_PERMITIDOS = {"image/jpeg", "image/jpg", "image/png", "image/svg"};
     public static final String DIRECTORIO_UPLOADS = "uploads";
     public static final String SUBDIRECTORIO_EVIDENCIAS = "evidencias";
