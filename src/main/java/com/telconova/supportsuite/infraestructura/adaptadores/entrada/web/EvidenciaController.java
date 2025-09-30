@@ -173,7 +173,7 @@ public class EvidenciaController {
             }
     )
     @DeleteMapping("/evidencias/{evidenciaId}")
-    @PreAuthorize("hasRole('TECNICO') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminarEvidencia(
             @Parameter(description = "ID de la evidencia a eliminar", required = true, example = "1")
             @PathVariable Long evidenciaId,
