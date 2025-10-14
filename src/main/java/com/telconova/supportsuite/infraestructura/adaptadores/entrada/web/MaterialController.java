@@ -121,4 +121,23 @@ public class MaterialController {
         boolean disponible = materialService.verificarDisponibilidadStock(id, cantidad);
         return ResponseEntity.ok(disponible);
     }
+
+    @Operation(
+            summary = "Eliminar material de orden",
+            description = "Elimina un material específico de una orden de trabajo (solo si está EN_PROCESO). " +
+                    "Devuelve la cantidad del material al stock disponible."
+    )
+    @DeleteMapping("/ordenes/{ordenId}/materiales/{materialUtilizadoId}")
+    @PreAuthorize("hasRole('TECNICO')")
+    public ResponseEntity<Void> eliminarMaterialDeOrden(
+            @Parameter(description = "ID de la orden") @PathVariable Long ordenId,
+            @Parameter(description = "ID del material utilizado a eliminar") @PathVariable Long materialUtilizadoId,
+            Authentication authentication) {
+        String emailUsuario = authentication.getName();
+        log.info("Eliminando material utilizado {} de orden {} por usuario: {}",
+                materialUtilizadoId, ordenId, emailUsuario);
+
+        materialService.eliminarMaterialDeOrden(ordenId, materialUtilizadoId, emailUsuario);
+        return ResponseEntity.noContent().build();
+    }
 }

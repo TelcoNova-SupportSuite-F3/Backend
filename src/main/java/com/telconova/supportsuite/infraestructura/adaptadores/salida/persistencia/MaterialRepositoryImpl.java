@@ -9,6 +9,7 @@ import com.telconova.supportsuite.infraestructura.adaptadores.salida.persistenci
 import com.telconova.supportsuite.infraestructura.adaptadores.salida.persistencia.mappers.MaterialUtilizadoMapper;
 import com.telconova.supportsuite.infraestructura.adaptadores.salida.persistencia.repositorios.MaterialJpaRepository;
 import com.telconova.supportsuite.infraestructura.adaptadores.salida.persistencia.repositorios.MaterialUtilizadoJpaRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -108,5 +109,37 @@ public class MaterialRepositoryImpl implements IMaterialRepository {
                 .stream()
                 .map(materialMapper::toDomain)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void eliminarMaterialesUtilizadosPorOrden(Long ordenTrabajoId) {
+        log.debug("Eliminando materiales utilizados de la orden: {}", ordenTrabajoId);
+
+        List<MaterialUtilizadoEntity> materialesUtilizados =
+                materialUtilizadoJpaRepository.findMaterialesUtilizadosPorOrden(ordenTrabajoId);
+
+        if (!materialesUtilizados.isEmpty()) {
+            materialUtilizadoJpaRepository.deleteAll(materialesUtilizados);
+            log.info("Eliminados {} registros de materiales utilizados de la orden {}",
+                    materialesUtilizados.size(), ordenTrabajoId);
+        } else {
+            log.debug("No hay materiales utilizados para eliminar en la orden {}", ordenTrabajoId);
+        }
+    }
+
+    @Override
+    public Optional<MaterialUtilizado> buscarMaterialUtilizadoPorId(Long materialUtilizadoId) {
+        log.debug("Buscando material utilizado por ID: {}", materialUtilizadoId);
+        return materialUtilizadoJpaRepository.findById(materialUtilizadoId)
+                .map(materialUtilizadoMapper::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public void eliminarMaterialUtilizado(Long materialUtilizadoId) {
+        log.debug("Eliminando material utilizado con ID: {}", materialUtilizadoId);
+        materialUtilizadoJpaRepository.deleteById(materialUtilizadoId);
+        log.info("Material utilizado {} eliminado exitosamente", materialUtilizadoId);
     }
 }

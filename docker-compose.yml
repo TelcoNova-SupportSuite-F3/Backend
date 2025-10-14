@@ -31,44 +31,6 @@ services:
       retries: 5
 
   # =====================================================
-  # APLICACIÓN SPRING BOOT
-  # =====================================================
-#  app:
-#    build:
-#      context: .
- #     dockerfile: Dockerfile
-  #  container_name: telconova-app
-   # environment:
-    #  SPRING_PROFILES_ACTIVE: prod
-     # DB_HOST: postgres
-    #  DB_PORT: 5432
-     # DB_NAME: telconova_db
-     # DB_USER: telconova_app
-     # DB_PASSWORD: TelcoN0v4_2025!
-     # JWT_SECRET: TelcoNova2025_SupportSuite_SecretKey_MuySeguro_NoCompartir_123456
-     # JWT_EXPIRATION: 86400000
-     # STORAGE_TYPE: local
-     # LOCAL_UPLOAD_DIR: /app/uploads
-     # CORS_ORIGINS: http://localhost:3000,http://localhost:4200,https://app.telconova.com
-   # volumes:
-   #   - app_uploads:/app/uploads
-   #   - app_logs:/app/logs
-   # ports:
-   #   - "8080:8080"
-   # networks:
-   #   - telconova-network
-   # depends_on:
-   #   postgres:
-   #     condition: service_healthy
-   # restart: unless-stopped
-   # healthcheck:
-   #   test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-   #   interval: 30s
-   #   timeout: 10s
-   #   retries: 3
-   #   start_period: 60s
-
-  # =====================================================
   # PROMETHEUS (MÉTRICAS)
   # =====================================================
   prometheus:

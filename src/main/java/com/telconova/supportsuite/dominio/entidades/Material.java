@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
  *
  * @author TelcoNova Development Team
  */
+@Slf4j
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -83,10 +85,11 @@ public class Material {
      */
     public void aumentarStock(int cantidad) {
         if (cantidad <= 0) {
-            throw MaterialNoValidoExcepcion.cantidadInvalida(cantidad);
+            throw new IllegalArgumentException("La cantidad debe ser mayor a cero");
         }
-
         this.stockDisponible += cantidad;
+        log.debug("Stock de material {} aumentado en {}. Nuevo stock: {}",
+                this.codigo, cantidad, this.stockDisponible);
     }
 
     /**

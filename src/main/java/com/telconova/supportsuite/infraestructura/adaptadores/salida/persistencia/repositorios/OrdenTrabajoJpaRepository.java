@@ -32,7 +32,7 @@ public interface OrdenTrabajoJpaRepository extends JpaRepository<OrdenTrabajoEnt
     @Query("SELECT o FROM OrdenTrabajoEntity o WHERE o.estado IN :estados ORDER BY o.prioridad DESC, o.fechaCreacion ASC")
     List<OrdenTrabajoEntity> findByEstadoInOrderByPrioridadDesc(@Param("estados") List<EstadoOrden> estados);
 
-    @Query("SELECT o FROM OrdenTrabajoEntity o WHERE o.fechaCreacion < :fechaLimite AND o.estado != 'FINALIZADA'")
+    @Query("SELECT o FROM OrdenTrabajoEntity o WHERE o.fechaCreacion < :fechaLimite AND o.estado NOT IN ('FINALIZADA', 'CANCELADA')")
     List<OrdenTrabajoEntity> findOrdenesVencidas(@Param("fechaLimite") LocalDateTime fechaLimite);
 
     @Query("SELECT o FROM OrdenTrabajoEntity o WHERE o.tecnicoAsignadoId = :tecnicoId AND o.estado IN ('ASIGNADA', 'EN_PROCESO', 'PAUSADA') ORDER BY o.prioridad DESC, o.fechaCreacion ASC")

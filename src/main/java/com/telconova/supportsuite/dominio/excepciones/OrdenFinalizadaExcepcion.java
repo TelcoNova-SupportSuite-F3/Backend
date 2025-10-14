@@ -12,13 +12,13 @@ public class OrdenFinalizadaExcepcion extends DominioExcepcion{
 
     public static OrdenFinalizadaExcepcion noSePuedeAgregarEvidencia(Long ordenId) {
         return new OrdenFinalizadaExcepcion(
-                String.format("No se puede agregar evidencia a la orden %d porque ya está finalizada", ordenId)
+                String.format("No se puede agregar evidencia a la orden %d en estado finalizada o cancelada", ordenId)
         );
     }
 
     public static OrdenFinalizadaExcepcion noSePuedeModificar(Long ordenId, String accion) {
         return new OrdenFinalizadaExcepcion(
-                String.format("No se puede %s en la orden %d porque ya está finalizada", accion, ordenId)
+                String.format("No se puede %s a la orden %d en estado finalizada o cancelada", accion, ordenId)
         );
     }
 }

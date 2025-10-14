@@ -109,6 +109,31 @@ spring:
     ansi:
       enabled: always
 
+  # Configuración de Email
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE}
+            required: true
+
+  # Email del supervisor
+app:
+  notificaciones:
+    supervisor-email: ${SUPERVISOR_EMAIL}
+
+  # Configuración de Twilio
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID}
+    auth-token: ${TWILIO_AUTH_TOKEN}
+    whatsapp-from: ${TWILIO_WHATSAPP_FROM}
+
 # =====================================================
 # CONFIGURACIÓN DE LOGGING
 # =====================================================
@@ -243,3 +268,4 @@ api:
     development: ${API_BASE_URL_DEVELOPMENT:http://localhost:8080}
     testing: ${API_BASE_URL_TESTING:https://api-test.telconova.com}
     production: ${API_BASE_URL_PRODUCTION}
+

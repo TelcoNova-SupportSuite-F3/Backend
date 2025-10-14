@@ -56,4 +56,19 @@ public interface IMaterialRepository {
      * Obtiene materiales con stock bajo
      */
     List<Material> obtenerMaterialesConStockBajo(int stockMinimo);
+
+    /**
+     * Elimina todos los materiales utilizados de una orden
+     */
+    void eliminarMaterialesUtilizadosPorOrden(Long ordenTrabajoId);
+
+    /**
+     * Elimina un registro específico de material utilizado
+     */
+    void eliminarMaterialUtilizado(Long materialUtilizadoId);
+
+    /**
+     * Busca un material utilizado por su ID
+     */
+    Optional<MaterialUtilizado> buscarMaterialUtilizadoPorId(Long materialUtilizadoId);
 }

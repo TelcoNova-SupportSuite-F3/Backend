@@ -1,17 +1,11 @@
 package com.telconova.supportsuite.aplicacion.servicios;
 
-import com.telconova.supportsuite.aplicacion.dto.response.EvidenciaResponse;
-import com.telconova.supportsuite.aplicacion.dto.response.MaterialUtilizadoResponse;
+import com.telconova.supportsuite.aplicacion.dto.response.*;
 import com.telconova.supportsuite.aplicacion.puertos.entrada.IEvidenciaService;
 import com.telconova.supportsuite.aplicacion.puertos.entrada.IMaterialService;
 import com.telconova.supportsuite.aplicacion.puertos.entrada.IOrdenTrabajoService;
-import com.telconova.supportsuite.aplicacion.puertos.salida.IAlmacenamientoArchivos;
-import com.telconova.supportsuite.aplicacion.puertos.salida.IEvidenciaRepository;
-import com.telconova.supportsuite.aplicacion.puertos.salida.IOrdenTrabajoRepository;
-import com.telconova.supportsuite.aplicacion.puertos.salida.IUsuarioRepository;
+import com.telconova.supportsuite.aplicacion.puertos.salida.*;
 import com.telconova.supportsuite.aplicacion.dto.request.ActualizarEstadoRequest;
-import com.telconova.supportsuite.aplicacion.dto.response.OrdenTrabajoResponse;
-import com.telconova.supportsuite.aplicacion.dto.response.TecnicoResponse;
 import com.telconova.supportsuite.dominio.entidades.Evidencia;
 import com.telconova.supportsuite.dominio.entidades.OrdenTrabajo;
 import com.telconova.supportsuite.dominio.entidades.Usuario;
@@ -46,6 +40,7 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
     private final IEvidenciaService evidenciaService;
     private final IMaterialService materialService;
     private final IAlmacenamientoArchivos almacenamientoArchivos;
+    private final INotificacionService notificacionService;
 
     @Override
     public List<OrdenTrabajoResponse> obtenerOrdenesPorTecnico(String emailTecnico) {
@@ -126,15 +121,63 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
         OrdenTrabajo orden = ordenTrabajoRepository.buscarPorId(ordenId)
                 .orElseThrow(() -> OrdenNoEncontradaExcepcion.porId(ordenId));
 
+        Usuario usuario = usuarioRepository.buscarPorEmail(emailUsuario)
+                .orElseThrow(() -> new OrdenNoEncontradaExcepcion("Usuario no encontrado: " + emailUsuario));
+
         // Verificar acceso
         if (!puedeAccederOrden(ordenId, emailUsuario)) {
             throw AccesoNoAutorizadoExcepcion.paraOrden(ordenId, emailUsuario);
         }
 
+        // Validar que no se intente modificar una orden CANCELADA o FINALIZADA
+        if (orden.getEstado() == EstadoOrden.CANCELADA) {
+            throw new EstadoOrdenInvalidoExcepcion("No se puede modificar una orden cancelada");
+        }
+
+        if (orden.getEstado() == EstadoOrden.FINALIZADA && request.getNuevoEstado() == EstadoOrden.CANCELADA) {
+            throw new EstadoOrdenInvalidoExcepcion("No se puede cancelar una orden que ya está finalizada");
+        }
+
+        // Validar transiciones permitidas usando el enum
+        if (!orden.getEstado().puedeTransicionarA(request.getNuevoEstado())) {
+            throw new EstadoOrdenInvalidoExcepcion(
+                    String.format("No se puede cambiar de estado %s a %s",
+                            orden.getEstado(), request.getNuevoEstado()));
+        }
+
+        // GUARDAR ESTADO ANTERIOR PARA NOTIFICACIÓN
+        EstadoOrden estadoAnterior = orden.getEstado();
+        LocalDateTime fechaHoraCambio = LocalDateTime.now();
+
         // Aplicar el cambio de estado según las reglas de negocio
         switch (request.getNuevoEstado()) {
-            case EN_PROCESO -> orden.iniciarTrabajo();
-            case PAUSADA -> orden.pausar();
+            case EN_PROCESO -> {
+                // Si viene de PAUSADA, reanudar; si viene de ASIGNADA, iniciar
+                if (orden.getEstado() == EstadoOrden.PAUSADA) {
+                    orden.reanudar();
+                    log.info("Orden {} reanudada desde estado PAUSADA", ordenId);
+                } else if (orden.getEstado() == EstadoOrden.ASIGNADA) {
+                    orden.iniciarTrabajo();
+                    log.info("Orden {} iniciada desde estado ASIGNADA", ordenId);
+                }
+            }
+            case PAUSADA -> {
+                orden.pausar();
+                log.info("Orden {} pausada", ordenId);
+            }
+            case CANCELADA -> {
+                orden.setEstado(EstadoOrden.CANCELADA);
+                orden.setFechaFinTrabajo(LocalDateTime.now());
+                orden.setFechaActualizacion(LocalDateTime.now());
+                try {
+                    materialService.devolverMaterialesDeOrden(ordenId);
+                    log.info("Materiales devueltos exitosamente al cancelar orden {}", ordenId);
+                } catch (Exception e) {
+                    log.error("Error al devolver materiales de la orden {}: {}", ordenId, e.getMessage());
+                    throw new DominioExcepcion("Error al devolver materiales: " + e.getMessage());
+                }
+                log.info("Orden {} cancelada por usuario: {}", ordenId, emailUsuario);
+            }
             case FINALIZADA -> {
                 if (request.getFechaInicioTrabajo() == null || request.getFechaFinTrabajo() == null) {
                     throw new IllegalArgumentException("Las fechas de inicio y fin son obligatorias para finalizar");
@@ -155,6 +198,29 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
         }
 
         OrdenTrabajo ordenActualizada = ordenTrabajoRepository.guardar(orden);
+
+        try {
+            CambioEstadoOrdenDTO cambioEstado = CambioEstadoOrdenDTO.builder()
+                    .numeroOrden(ordenActualizada.getNumeroOrden().getValor())
+                    .nombreTecnico(usuario.getNombreCompleto())
+                    .estadoAnterior(estadoAnterior.getDescripcion())
+                    .estadoNuevo(ordenActualizada.getEstado().getDescripcion())
+                    .fechaHoraCambio(fechaHoraCambio)
+                    .clienteNombre(ordenActualizada.getClienteNombre())
+                    .clienteTelefono(ordenActualizada.getClienteTelefono() != null
+                            ? ordenActualizada.getClienteTelefono().toString() : null)
+                    .build();
+
+            // Notificar al supervisor
+            notificacionService.notificarCambioEstadoASupervisor(cambioEstado);
+
+            // Notificar al cliente
+            notificacionService.notificarCambioEstadoACliente(cambioEstado);
+
+            log.info("Notificaciones enviadas para orden {}", ordenId);
+        } catch (Exception e) {
+            log.error("Error al enviar notificaciones para orden {}: {}", ordenId, e.getMessage());
+        }
 
         log.info("Estado de orden {} actualizado exitosamente a {}", ordenId, request.getNuevoEstado());
 

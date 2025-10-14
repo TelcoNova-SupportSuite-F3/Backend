@@ -241,7 +241,7 @@ public class EvidenciaService implements IEvidenciaService {
         }
 
         // Verificar que la orden no esté finalizada
-        if (orden.getEstado() == EstadoOrden.FINALIZADA) {
+        if (orden.getEstado() == EstadoOrden.FINALIZADA || orden.getEstado() == EstadoOrden.CANCELADA) {
             throw OrdenFinalizadaExcepcion.noSePuedeAgregarEvidencia(ordenId);
         }
 

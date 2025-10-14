@@ -124,4 +124,23 @@ public class OrdenTrabajoController {
         List<OrdenTrabajoResponse> ordenes = ordenTrabajoService.obtenerOrdenesPorEstado(estado, emailUsuario);
         return ResponseEntity.ok(ordenes);
     }
+
+    @Operation(
+            summary = "Cancelar orden",
+            description = "Cancela una orden de trabajo. No requiere evidencias y establece la fecha de fin automáticamente"
+    )
+    @PostMapping("/{id}/cancelar")
+    @PreAuthorize("hasRole('TECNICO') or hasRole('ADMIN')")
+    public ResponseEntity<OrdenTrabajoResponse> cancelarOrden(
+            @Parameter(description = "ID de la orden") @PathVariable Long id,
+            Authentication authentication) {
+        String emailUsuario = authentication.getName();
+        log.info("Cancelando orden {} por usuario: {}", id, emailUsuario);
+
+        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
+        request.setNuevoEstado(EstadoOrden.CANCELADA);
+
+        OrdenTrabajoResponse orden = ordenTrabajoService.actualizarEstadoOrden(id, request, emailUsuario);
+        return ResponseEntity.ok(orden);
+    }
 }

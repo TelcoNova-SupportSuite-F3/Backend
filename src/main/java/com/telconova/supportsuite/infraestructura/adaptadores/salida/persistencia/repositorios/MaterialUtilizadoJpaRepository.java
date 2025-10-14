@@ -2,6 +2,7 @@ package com.telconova.supportsuite.infraestructura.adaptadores.salida.persistenc
 
 import com.telconova.supportsuite.infraestructura.adaptadores.salida.persistencia.entidades.MaterialUtilizadoEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -24,4 +25,11 @@ public interface MaterialUtilizadoJpaRepository extends JpaRepository<MaterialUt
 
     @Query("SELECT SUM(mu.cantidadUtilizada * mu.precioUnitario) FROM MaterialUtilizadoEntity mu WHERE mu.ordenTrabajoId = :ordenId")
     Double calcularCostoTotalMateriales(@Param("ordenId") Long ordenId);
+
+    /**
+     * Elimina todos los materiales utilizados de una orden
+     */
+    @Modifying
+    @Query("DELETE FROM MaterialUtilizadoEntity mu WHERE mu.ordenTrabajoId = :ordenId")
+    void deleteByOrdenTrabajoId(@Param("ordenId") Long ordenId);
 }

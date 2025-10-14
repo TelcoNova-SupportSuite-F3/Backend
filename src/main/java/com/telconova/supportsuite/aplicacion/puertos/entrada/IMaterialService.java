@@ -38,4 +38,15 @@ public interface IMaterialService {
      * Verifica disponibilidad de stock
      */
     boolean verificarDisponibilidadStock(Long materialId, Integer cantidad);
+
+    /**
+     * Devuelve al stock todos los materiales utilizados en una orden cancelada
+     */
+    void devolverMaterialesDeOrden(Long ordenId);
+
+    /**
+     * Elimina un material específico de una orden (solo si está EN_PROCESO)
+     * y devuelve la cantidad al stock
+     */
+    void eliminarMaterialDeOrden(Long ordenId, Long materialUtilizadoId, String emailUsuario);
 }

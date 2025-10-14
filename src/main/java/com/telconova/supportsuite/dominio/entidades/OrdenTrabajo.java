@@ -8,6 +8,7 @@ import com.telconova.supportsuite.dominio.valueobjects.Telefono;
 import com.telconova.supportsuite.dominio.excepciones.DominioExcepcion;
 import com.telconova.supportsuite.dominio.excepciones.EstadoOrdenInvalidoExcepcion;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.time.Duration;
@@ -18,6 +19,7 @@ import java.util.List;
 
 @Getter
 @Setter
+@Slf4j
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -354,6 +356,19 @@ public class OrdenTrabajo {
             throw new DominioExcepcion("La dirección no puede exceder 500 caracteres");
         }
     }
+
+    /**
+     * Remueve un material utilizado de la orden
+     */
+    public void removerMaterialUtilizado(MaterialUtilizado materialUtilizado) {
+        if (this.materialesUtilizados != null && materialUtilizado != null) {
+            this.materialesUtilizados.removeIf(m ->
+                    m.getId() != null && m.getId().equals(materialUtilizado.getId()));
+            log.debug("Material utilizado {} removido de la orden {}",
+                    materialUtilizado.getId(), this.id);
+        }
+    }
+
 
     @Override
     public String toString() {

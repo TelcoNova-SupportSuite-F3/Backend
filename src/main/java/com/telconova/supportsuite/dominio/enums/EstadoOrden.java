@@ -7,6 +7,7 @@ public enum EstadoOrden {
     ASIGNADA("Asignada", "Orden asignada a un técnico pero aún no iniciada"),
     EN_PROCESO("En Proceso", "Orden siendo trabajada por el técnico"),
     PAUSADA("Pausada", "Orden temporalmente pausada"),
+    CANCELADA("Cancelada", "Orden cancelada y no se completará"),
     FINALIZADA("Finalizada", "Orden completada exitosamente");
 
     private final String descripcion;
@@ -51,9 +52,10 @@ public enum EstadoOrden {
      */
     public boolean puedeTransicionarA(EstadoOrden estadoDestino) {
         return switch (this) {
-            case ASIGNADA -> Set.of(EN_PROCESO, PAUSADA).contains(estadoDestino);
-            case EN_PROCESO -> Set.of(PAUSADA, FINALIZADA).contains(estadoDestino);
-            case PAUSADA -> Set.of(EN_PROCESO, FINALIZADA).contains(estadoDestino);
+            case ASIGNADA -> Set.of(EN_PROCESO, PAUSADA, CANCELADA).contains(estadoDestino);
+            case EN_PROCESO -> Set.of(PAUSADA, CANCELADA, FINALIZADA).contains(estadoDestino);
+            case PAUSADA -> Set.of(EN_PROCESO, CANCELADA, FINALIZADA).contains(estadoDestino);
+            case CANCELADA -> false; // No se puede cambiar desde cancelada
             case FINALIZADA -> false; // No se puede cambiar desde finalizada
         };
     }
