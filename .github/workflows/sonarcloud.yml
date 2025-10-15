@@ -57,3 +57,4 @@ jobs:
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
