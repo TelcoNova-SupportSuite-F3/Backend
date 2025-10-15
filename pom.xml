@@ -28,7 +28,7 @@
         <!-- SonarCloud -->
         <sonar.organization>AndresT3086</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <sonar.projectKey>andrest3086</sonar.projectKey>
+        <sonar.projectKey>AndresT3086_BackendTelconova</sonar.projectKey>
 
         <!-- Coverage -->
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>

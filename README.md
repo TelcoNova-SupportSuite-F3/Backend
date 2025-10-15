@@ -1,5 +1,5 @@
 # Backend
-microservicio seguro para la gestión y trazabilidad de órdenes de trabajo. Maneja autenticación de técnicos, registro de avances, actualización de estados, generación de notificaciones y provee datos al dashboard de seguimiento cumpliendo estándares de seguridad y accesibilidad.
+Microservicio seguro para la gestión y trazabilidad de órdenes de trabajo. Maneja autenticación de técnicos, registro de avances, actualización de estados, generación de notificaciones y provee datos al dashboard de seguimiento cumpliendo estándares de seguridad y accesibilidad.
 
 # 📱 TelcoNova SupportSuite - Manual de Usuario
 
@@ -15,7 +15,13 @@ microservicio seguro para la gestión y trazabilidad de órdenes de trabajo. Man
 [![Spring Boot](https://img.shields.io/badge/spring%20boot-3.2.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![PostgreSQL](https://img.shields.io/badge/postgresql-15-blue.svg)](https://postgresql.org/)
 [![License](https://img.shields.io/badge/license-Proprietario-red.svg)](LICENSE)
-
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=AndresT3086_BackendTelconova&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=AndresT3086_BackendTelconova)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=AndresT3086_BackendTelconova&metric=coverage)](https://sonarcloud.io/summary/new_code?id=AndresT3086_BackendTelconova)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=AndresT3086_BackendTelconova&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=AndresT3086_BackendTelconova)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=AndresT3086_BackendTelconova&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=AndresT3086_BackendTelconova)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=AndresT3086_BackendTelconova&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=AndresT3086_BackendTelconova)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=AndresT3086_BackendTelconova&metric=bugs)](https://sonarcloud.io/summary/new_code?id=AndresT3086_BackendTelconova)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=AndresT3086_BackendTelconova&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=AndresT3086_BackendTelconova)
 </div>
 
 ---
