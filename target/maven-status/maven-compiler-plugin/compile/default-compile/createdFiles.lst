@@ -6,13 +6,16 @@ com\telconova\supportsuite\aplicacion\puertos\salida\ISeguridadService.class
 com\telconova\supportsuite\dominio\entidades\Material.class
 com\telconova\supportsuite\dominio\entidades\Evidencia.class
 com\telconova\supportsuite\compartido\utilidades\ArchivoUtil.class
+com\telconova\supportsuite\infraestructura\adaptadores\salida\notificaciones\EmailNotificacionAdapter.class
 com\telconova\supportsuite\aplicacion\servicios\OrdenTrabajoService.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\entidades\UsuarioEntity.class
 com\telconova\supportsuite\compartido\excepciones\ErrorResponse$ErrorResponseBuilder.class
 com\telconova\supportsuite\dominio\excepciones\OrdenFinalizadaExcepcion.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\entidades\MaterialEntity.class
+com\telconova\supportsuite\aplicacion\dto\response\CambioEstadoOrdenDTO.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\entidades\OrdenTrabajoEntity.class
 com\telconova\supportsuite\aplicacion\puertos\entrada\IMaterialService.class
+com\telconova\supportsuite\infraestructura\adaptadores\salida\notificaciones\WhatsAppNotificacionAdapter.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\entidades\MaterialUtilizadoEntity$MaterialUtilizadoEntityBuilder.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\OrdenTrabajoRepositoryImpl.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\repositorios\UsuarioJpaRepository.class
@@ -46,6 +49,7 @@ com\telconova\supportsuite\infraestructura\adaptadores\salida\almacenamiento\Clo
 com\telconova\supportsuite\aplicacion\servicios\EvidenciaService.class
 com\telconova\supportsuite\infraestructura\configuracion\MetricsConfig.class
 com\telconova\supportsuite\dominio\entidades\OrdenTrabajo$OrdenTrabajoBuilder.class
+com\telconova\supportsuite\infraestructura\adaptadores\salida\notificaciones\NotificacionService.class
 com\telconova\supportsuite\aplicacion\puertos\salida\IMaterialRepository.class
 com\telconova\supportsuite\aplicacion\dto\response\LoginResponse.class
 com\telconova\supportsuite\compartido\excepciones\ErrorResponse.class
@@ -80,6 +84,7 @@ com\telconova\supportsuite\infraestructura\adaptadores\entrada\web\EvidenciaCont
 com\telconova\supportsuite\infraestructura\configuracion\StorageConfiguration.class
 com\telconova\supportsuite\dominio\valueobjects\NumeroOrden.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\UsuarioRepositoryImpl.class
+com\telconova\supportsuite\infraestructura\configuracion\AsyncConfiguration.class
 com\telconova\supportsuite\aplicacion\servicios\OrdenTrabajoService$1.class
 com\telconova\supportsuite\aplicacion\puertos\entrada\IOrdenTrabajoService.class
 com\telconova\supportsuite\dominio\entidades\OrdenTrabajo.class
@@ -89,6 +94,7 @@ com\telconova\supportsuite\compartido\utilidades\FechaUtil.class
 com\telconova\supportsuite\infraestructura\adaptadores\entrada\config\SwaggerConfig.class
 com\telconova\supportsuite\dominio\entidades\Evidencia$EvidenciaBuilder.class
 com\telconova\supportsuite\aplicacion\dto\response\TecnicoResponse$TecnicoResponseBuilder.class
+com\telconova\supportsuite\aplicacion\puertos\salida\INotificacionService.class
 com\telconova\supportsuite\dominio\entidades\Material$MaterialBuilder.class
 com\telconova\supportsuite\dominio\excepciones\EstadoOrdenInvalidoExcepcion.class
 com\telconova\supportsuite\dominio\excepciones\DominioExcepcion.class
@@ -104,6 +110,7 @@ com\telconova\supportsuite\infraestructura\adaptadores\entrada\web\Autenticacion
 com\telconova\supportsuite\aplicacion\dto\request\ActualizarEstadoRequest$ActualizarEstadoRequestBuilder.class
 com\telconova\supportsuite\aplicacion\dto\request\RegistrarEvidenciaRequest$RegistrarEvidenciaRequestBuilder.class
 com\telconova\supportsuite\aplicacion\servicios\MaterialService.class
+com\telconova\supportsuite\aplicacion\dto\response\CambioEstadoOrdenDTO$CambioEstadoOrdenDTOBuilder.class
 com\telconova\supportsuite\infraestructura\adaptadores\entrada\config\CorsConfig.class
 com\telconova\supportsuite\compartido\excepciones\ErrorResponse$ErrorCampo$ErrorCampoBuilder.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\entidades\EvidenciaEntity.class
@@ -112,4 +119,5 @@ com\telconova\supportsuite\dominio\entidades\HistorialEstado.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\repositorios\EvidenciaJpaRepository.class
 com\telconova\supportsuite\aplicacion\puertos\entrada\IAutenticacionService.class
 com\telconova\supportsuite\infraestructura\adaptadores\salida\persistencia\mappers\MaterialMapper.class
+com\telconova\supportsuite\aplicacion\puertos\salida\INotificacionStrategy.class
 com\telconova\supportsuite\dominio\valueobjects\Email.class
