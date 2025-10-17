@@ -235,8 +235,13 @@
                 <version>9.0.7</version>
                 <configuration>
                     <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+                    <nvdApiDelay>6000</nvdApiDelay>
                     <failBuildOnCVSS>8</failBuildOnCVSS>
                     <failOnError>false</failOnError>
+                    <skipSystemScope>true</skipSystemScope>
+                    <skipTestScope>true</skipTestScope>
+                    <nvdMaxRetryCount>3</nvdMaxRetryCount>
+                    <nvdValidForHours>24</nvdValidForHours>
                 </configuration>
                 <executions>
                     <execution>
