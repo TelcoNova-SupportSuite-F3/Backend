@@ -11,7 +11,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -21,11 +23,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDateTime;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,7 +52,27 @@ class AutenticacionControllerTest {
                 .setControllerAdvice(new ManejadorExcepcionGlobal())
                 .build();
         objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules(); // Para LocalDateTime
+        objectMapper.findAndRegisterModules();
+    }
+
+    private static Stream<Arguments> proveedorDatosInvalidosLogin() {
+        return Stream.of(
+                Arguments.of("emailinvalido", "password123", "Email con formato inválido"),
+                Arguments.of("usuario@gmail.com", "password123", "Email con dominio incorrecto"),
+                Arguments.of(null, "password123", "Email nulo"),
+                Arguments.of("telconova@telconova.com", null, "Contraseña nula")
+        );
+    }
+
+    private static Stream<Arguments> proveedorHeadersInvalidos() {
+        return Stream.of(
+                Arguments.of("", "Header Authorization vacío"),
+                Arguments.of("Basic dXNlcjpwYXNzd29yZA==", "Header sin prefijo Bearer"),
+                Arguments.of("BearerTokenMalformado", "Token malformado sin espacio"),
+                Arguments.of("BearereyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", "Token sin espacio después de Bearer"),
+                Arguments.of("Bearer", "Solo la palabra Bearer sin token"),
+                Arguments.of("Bearer ", "Bearer con espacio pero sin token")
+        );
     }
 
     @Test
@@ -88,45 +112,6 @@ class AutenticacionControllerTest {
         verify(autenticacionService, times(1)).iniciarSesion(any(LoginRequest.class));
     }
 
-    @Test
-    @DisplayName("Debe rechazar login con email inválido")
-    void debeRechazarLoginConEmailInvalido() throws Exception {
-        // Arrange
-        LoginRequest request = LoginRequest.builder()
-                .email("emailinvalido")
-                .contrasena("password123")
-                .build();
-
-        // Act & Assert
-        mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Bad Request"));
-
-        verify(autenticacionService, never()).iniciarSesion(any());
-    }
-
-    @Test
-    @DisplayName("Debe rechazar login con email de dominio incorrecto")
-    void debeRechazarLoginConDominioIncorrecto() throws Exception {
-        // Arrange
-        LoginRequest request = LoginRequest.builder()
-                .email("usuario@gmail.com")
-                .contrasena("password123")
-                .build();
-
-        // Act & Assert
-        mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Bad Request"));
-
-        verify(autenticacionService, never()).iniciarSesion(any());
-    }
 
     @Test
     @DisplayName("Debe rechazar login sin email")
@@ -244,37 +229,20 @@ class AutenticacionControllerTest {
         verify(autenticacionService, never()).validarToken(anyString());
     }
 
-    @Test
-    @DisplayName("Debe rechazar validación con header Authorization vacío")
-    void debeRechazarValidacionConHeaderVacio() throws Exception {
-        // Arrange
-        String token = "";
-
+    @ParameterizedTest
+    @DisplayName("Debe rechazar validación con header Authorization inválido")
+    @MethodSource("proveedorHeadersInvalidos")
+    void debeRechazarValidacionConHeaderInvalido(String authorizationHeader, String descripcion) throws Exception {
         // Act & Assert
         mockMvc.perform(get("/auth/validate")
-                        .header("Authorization", token)
+                        .header("Authorization", authorizationHeader)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().string("false"));
 
-        verify(autenticacionService, never()).validarToken(anyString());
     }
 
-    @Test
-    @DisplayName("Debe rechazar validación con header sin Bearer")
-    void debeRechazarValidacionSinBearer() throws Exception {
-        // Arrange
-        String token = "Basic dXNlcjpwYXNzd29yZA==";
 
-        // Act & Assert
-        mockMvc.perform(get("/auth/validate")
-                        .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().string("false"));
-
-        verify(autenticacionService, never()).validarToken(anyString());
-    }
 
     @Test
     @DisplayName("Debe autenticar admin correctamente")
@@ -355,6 +323,26 @@ class AutenticacionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMalformado))
                 .andExpect(status().isBadRequest());
+
+        verify(autenticacionService, never()).iniciarSesion(any());
+    }
+    @ParameterizedTest
+    @DisplayName("Debe rechazar login con datos inválidos")
+    @MethodSource("proveedorDatosInvalidosLogin")
+    void debeRechazarLoginConDatosInvalidos(String email, String contrasena, String descripcion) throws Exception {
+        // Arrange
+        LoginRequest request = LoginRequest.builder()
+                .email(email)
+                .contrasena(contrasena)
+                .build();
+
+        // Act & Assert
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"));
 
         verify(autenticacionService, never()).iniciarSesion(any());
     }
