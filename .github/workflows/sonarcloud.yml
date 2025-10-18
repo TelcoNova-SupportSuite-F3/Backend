@@ -56,8 +56,8 @@ jobs:
             -Dsonar.qualitygate.wait=true
 
 
-      - name: SonarCloud Quality Gate check
-        uses: sonarsource/sonarcloud-quality-gate-action@master
+      - name: Check Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
