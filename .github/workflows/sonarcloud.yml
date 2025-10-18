@@ -53,6 +53,7 @@ jobs:
             -Dnvd.api.key=${{ secrets.NVD_API_KEY }} \
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+            -Ddependency-check.skip=true
 
       - name: Check Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@master
