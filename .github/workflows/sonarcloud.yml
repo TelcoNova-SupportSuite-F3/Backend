@@ -41,17 +41,26 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Run Tests with Coverage
-        run: mvn clean test
+        run: mvn clean verify -Dmaven.test.failure.ignore=false
+
+      - name: Check JaCoCo Report
+        run: |
+          if [ -f target/site/jacoco/jacoco.xml ]; then
+            echo "JaCoCo report generated successfully"
+            ls -lh target/site/jacoco/
+          else
+            echo "JaCoCo report not found!"
+            exit 1
+          fi
 
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          mvn sonar:sonar \
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-            -Dmaven.test.skip=true \
             -Ddependency-check.skip=true \
             -Dsonar.qualitygate.wait=true
 
