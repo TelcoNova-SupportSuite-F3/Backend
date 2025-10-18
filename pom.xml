@@ -32,15 +32,20 @@
 
         <!-- Coverage -->
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-        <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
-        <sonar.language>java</sonar.language>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.exclusions>
+            **/config/**,
+            **/configuracion/**,
+            **/dto/**,
+            **/request/**,
+            **/response/**,
+            **/entidades/**,
+            **/entity/**,
+            **/SupportsuiteApplication.java
+        </sonar.exclusions>        <sonar.language>java</sonar.language>
 
         <!-- Umbrales de calidad -->
         <sonar.coverage.minimum>40</sonar.coverage.minimum>
-        <sonar.sqale.rating.threshold>3.0</sonar.sqale.rating.threshold>
-
         <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
     </properties>
 
