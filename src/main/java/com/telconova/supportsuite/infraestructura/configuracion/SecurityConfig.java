@@ -28,10 +28,18 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final CorsConfigurationSource corsConfigurationSource;
 
+    private String admin = "ADMIN";
+    private String tecnico = "TECNICO";
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                // CSRF deshabilitado: Seguro en este contexto porque:
+                // 1. Usamos JWT (autenticación stateless sin cookies de sesión)
+                // 2. SessionCreationPolicy.STATELESS (no hay sesiones del lado del servidor)
+                // 3. Las APIs REST sin estado no son vulnerables a ataques CSRF
+                // 4. Los tokens JWT se envían en headers Authorization, no en cookies
+                .csrf(AbstractHttpConfigurer::disable) // NOSONAR - JWT stateless API, CSRF no aplicable
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
@@ -52,25 +60,25 @@ public class SecurityConfig {
                         .requestMatchers("/webjars/**").permitAll()
 
                         // Endpoints de órdenes (con /api/v1)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/ordenes/mis-ordenes").hasRole("TECNICO")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/ordenes/todas").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/ordenes/{id}").hasAnyRole("TECNICO", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/ordenes/{id}/estado").hasRole("TECNICO")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ordenes/{id}/finalizar").hasRole("TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/ordenes/mis-ordenes").hasRole(tecnico)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/ordenes/todas").hasRole(admin)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/ordenes/{id}").hasAnyRole(tecnico, admin)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/ordenes/{id}/estado").hasRole(tecnico)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ordenes/{id}/finalizar").hasRole(tecnico)
 
                         // Endpoints de evidencias (con /api/v1)
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ordenes/{id}/evidencias/**").hasRole("TECNICO")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/ordenes/{id}/evidencias").hasAnyRole("TECNICO", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/evidencias/{id}").hasAnyRole("TECNICO", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ordenes/{id}/evidencias/**").hasRole(tecnico)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/ordenes/{id}/evidencias").hasAnyRole(tecnico, admin)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/evidencias/{id}").hasAnyRole(tecnico, admin)
 
                         // Endpoints de materiales (con /api/v1)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/materiales/buscar").hasRole("TECNICO")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ordenes/{id}/materiales").hasRole("TECNICO")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/materiales").hasAnyRole("TECNICO", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/materiales").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/materiales/buscar").hasRole(tecnico)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ordenes/{id}/materiales").hasRole(tecnico)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/materiales").hasAnyRole(tecnico, admin)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/materiales").hasRole(admin)
 
                         // Métricas (solo para admins)
-                        .requestMatchers("/actuator/**").hasRole("ADMIN")
+                        .requestMatchers("/actuator/**").hasRole(admin)
 
                         // Cualquier otra petición requiere autenticación
                         .anyRequest().authenticated()
