@@ -52,7 +52,7 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
             -Dmaven.test.skip=true \
-            -Ddependency-check.skip=true
+            -Ddependency-check.skip=true \
             -Dsonar.qualitygate.wait=true
 
 
