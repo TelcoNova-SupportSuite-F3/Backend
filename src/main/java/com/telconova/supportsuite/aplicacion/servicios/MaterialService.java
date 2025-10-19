@@ -1,12 +1,12 @@
 package com.telconova.supportsuite.aplicacion.servicios;
 
+import com.telconova.supportsuite.aplicacion.dto.request.AgregarMaterialRequest;
+import com.telconova.supportsuite.aplicacion.dto.response.MaterialResponse;
+import com.telconova.supportsuite.aplicacion.dto.response.MaterialUtilizadoResponse;
 import com.telconova.supportsuite.aplicacion.puertos.entrada.IMaterialService;
 import com.telconova.supportsuite.aplicacion.puertos.salida.IMaterialRepository;
 import com.telconova.supportsuite.aplicacion.puertos.salida.IOrdenTrabajoRepository;
 import com.telconova.supportsuite.aplicacion.puertos.salida.IUsuarioRepository;
-import com.telconova.supportsuite.aplicacion.dto.request.AgregarMaterialRequest;
-import com.telconova.supportsuite.aplicacion.dto.response.MaterialResponse;
-import com.telconova.supportsuite.aplicacion.dto.response.MaterialUtilizadoResponse;
 import com.telconova.supportsuite.dominio.entidades.Material;
 import com.telconova.supportsuite.dominio.entidades.MaterialUtilizado;
 import com.telconova.supportsuite.dominio.entidades.OrdenTrabajo;
@@ -52,7 +52,7 @@ public class MaterialService implements IMaterialService {
 
         return materiales.stream()
                 .map(this::mapearMaterialAResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -159,7 +159,7 @@ public class MaterialService implements IMaterialService {
 
         return materiales.stream()
                 .map(this::mapearMaterialAResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -183,7 +183,7 @@ public class MaterialService implements IMaterialService {
 
         return materialesUtilizados.stream()
                 .map(this::mapearMaterialUtilizadoAResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

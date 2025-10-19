@@ -1,19 +1,19 @@
 package com.telconova.supportsuite.aplicacion.servicios;
 
+import com.telconova.supportsuite.aplicacion.dto.request.ActualizarEstadoRequest;
 import com.telconova.supportsuite.aplicacion.dto.response.*;
 import com.telconova.supportsuite.aplicacion.puertos.entrada.IEvidenciaService;
 import com.telconova.supportsuite.aplicacion.puertos.entrada.IMaterialService;
 import com.telconova.supportsuite.aplicacion.puertos.entrada.IOrdenTrabajoService;
 import com.telconova.supportsuite.aplicacion.puertos.salida.*;
-import com.telconova.supportsuite.aplicacion.dto.request.ActualizarEstadoRequest;
 import com.telconova.supportsuite.dominio.entidades.Evidencia;
 import com.telconova.supportsuite.dominio.entidades.OrdenTrabajo;
 import com.telconova.supportsuite.dominio.entidades.Usuario;
 import com.telconova.supportsuite.dominio.enums.EstadoOrden;
+import com.telconova.supportsuite.dominio.excepciones.AccesoNoAutorizadoExcepcion;
 import com.telconova.supportsuite.dominio.excepciones.DominioExcepcion;
 import com.telconova.supportsuite.dominio.excepciones.EstadoOrdenInvalidoExcepcion;
 import com.telconova.supportsuite.dominio.excepciones.OrdenNoEncontradaExcepcion;
-import com.telconova.supportsuite.dominio.excepciones.AccesoNoAutorizadoExcepcion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Servicio de aplicación para operaciones con órdenes de trabajo
@@ -41,13 +40,15 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
     private final IMaterialService materialService;
     private final IAlmacenamientoArchivos almacenamientoArchivos;
     private final INotificacionService notificacionService;
+    private static final String MENSAJE_USUARIO_NO_ENCONTRADO = "Usuario no encontrado: ";
+
 
     @Override
     public List<OrdenTrabajoResponse> obtenerOrdenesPorTecnico(String emailTecnico) {
         log.info("Obteniendo órdenes para técnico: {}", emailTecnico);
 
         Usuario tecnico = usuarioRepository.buscarPorEmail(emailTecnico)
-                .orElseThrow(() -> new OrdenNoEncontradaExcepcion("Usuario no encontrado: " + emailTecnico));
+                .orElseThrow(() -> new OrdenNoEncontradaExcepcion(MENSAJE_USUARIO_NO_ENCONTRADO + emailTecnico));
 
         if (!tecnico.esTecnico()) {
             throw AccesoNoAutorizadoExcepcion.porRolInsuficiente("TECNICO", tecnico.getRol().name());
@@ -59,7 +60,7 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
 
         return ordenes.stream()
                 .map(orden -> mapearAResponseCompleto(orden, emailTecnico))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -72,7 +73,7 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
 
         return ordenes.stream()
                 .map(orden -> mapearAResponseCompleto(orden, null)) // null indica admin
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -95,7 +96,7 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
         log.info("Obteniendo órdenes en estado {} para usuario: {}", estado, emailUsuario);
 
         Usuario usuario = usuarioRepository.buscarPorEmail(emailUsuario)
-                .orElseThrow(() -> new OrdenNoEncontradaExcepcion("Usuario no encontrado: " + emailUsuario));
+                .orElseThrow(() -> new OrdenNoEncontradaExcepcion(MENSAJE_USUARIO_NO_ENCONTRADO + emailUsuario));
 
         List<OrdenTrabajo> ordenes;
 
@@ -109,7 +110,7 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
 
         return ordenes.stream()
                 .map(orden -> mapearAResponseCompleto(orden, emailUsuario))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -122,7 +123,7 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
                 .orElseThrow(() -> OrdenNoEncontradaExcepcion.porId(ordenId));
 
         Usuario usuario = usuarioRepository.buscarPorEmail(emailUsuario)
-                .orElseThrow(() -> new OrdenNoEncontradaExcepcion("Usuario no encontrado: " + emailUsuario));
+                .orElseThrow(() -> new OrdenNoEncontradaExcepcion(MENSAJE_USUARIO_NO_ENCONTRADO + emailUsuario));
 
         // Verificar acceso
         if (!puedeAccederOrden(ordenId, emailUsuario)) {
@@ -130,12 +131,8 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
         }
 
         // Validar que no se intente modificar una orden CANCELADA o FINALIZADA
-        if (orden.getEstado() == EstadoOrden.CANCELADA) {
-            throw new EstadoOrdenInvalidoExcepcion("No se puede modificar una orden cancelada");
-        }
-
-        if (orden.getEstado() == EstadoOrden.FINALIZADA && request.getNuevoEstado() == EstadoOrden.CANCELADA) {
-            throw new EstadoOrdenInvalidoExcepcion("No se puede cancelar una orden que ya está finalizada");
+        if (orden.getEstado() == EstadoOrden.CANCELADA || orden.getEstado() == EstadoOrden.FINALIZADA) {
+            throw new EstadoOrdenInvalidoExcepcion("No se puede modificar una orden cancelada o finalizada");
         }
 
         // Validar transiciones permitidas usando el enum
@@ -306,7 +303,7 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
                                     .orElse("Usuario desconocido");
                             return mapearEvidenciaAResponse(evidencia, nombreCreador);
                         })
-                        .collect(Collectors.toList());
+                        .toList();
             } catch (Exception e) {
                 log.warn("Error cargando evidencias para orden {} (admin): {}", orden.getId(), e.getMessage());
                 evidencias = List.of();

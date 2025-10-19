@@ -12,7 +12,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Implementación del repositorio de evidencias usando JPA
@@ -46,7 +45,7 @@ public class EvidenciaRepositoryImpl implements IEvidenciaRepository {
         return jpaRepository.findEvidenciasPorOrdenOrdenadas(ordenTrabajoId)
                 .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -55,7 +54,7 @@ public class EvidenciaRepositoryImpl implements IEvidenciaRepository {
         return jpaRepository.findByOrdenTrabajoIdAndTipo(ordenTrabajoId, tipo)
                 .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -76,6 +75,6 @@ public class EvidenciaRepositoryImpl implements IEvidenciaRepository {
         return jpaRepository.findByCreadoPor(usuarioId)
                 .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

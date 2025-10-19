@@ -35,7 +35,7 @@ public class AutenticacionService implements IAutenticacionService{
         try {
             // Buscar usuario por email
             Usuario usuario = usuarioRepository.buscarPorEmail(request.getEmail())
-                    .orElseThrow(() -> UsuarioNoValidoExcepcion.porCredencialesInvalidas());
+                    .orElseThrow(UsuarioNoValidoExcepcion::porCredencialesInvalidas);
 
             // Verificar que el usuario esté activo
             if (!usuario.estaActivo()) {
@@ -61,36 +61,40 @@ public class AutenticacionService implements IAutenticacionService{
 
             log.info("Autenticación exitosa para usuario: {} con rol: {}",
                     request.getEmail(), usuario.getRol());
+            return construirLoginResponse(usuario, token, expiracion);
 
-            try {
-                LoginResponse response = LoginResponse.builder()
-                        .token(token)
-                        .tipoToken("Bearer")
-                        .email(usuario.getEmail().getValor())
-                        .nombreCompleto(usuario.getNombreCompleto())
-                        .rol(usuario.getRol().name())
-                        .expiracion(LocalDateTime.ofInstant(expiracion.toInstant(), ZoneId.systemDefault()))
-                        .activo(usuario.estaActivo())
-                        .build();
-                log.debug("LoginResponse creado exitosamente: {}", response);
-                return response;
         } catch (Exception e) {
-                log.error("Error construyendo LoginResponse", e);
-
-                // Respuesta de respaldo sin fecha de expiración para debug
-                return LoginResponse.builder()
-                        .token(token)
-                        .tipoToken("Bearer")
-                        .email(usuario.getEmail().getValor())
-                        .nombreCompleto(usuario.getNombreCompleto())
-                        .rol(usuario.getRol().name())
-                        .expiracion(LocalDateTime.now().plusDays(1)) // Fecha fija temporal
-                        .activo(usuario.estaActivo())
-                        .build();
-            }
-        }catch (Exception e) {
             log.error("Error durante la autenticación para usuario: {}", request.getEmail(), e);
             throw e;
+        }
+    }
+
+    private LoginResponse construirLoginResponse(Usuario usuario, String token, Date expiracion) {
+        try {
+            LoginResponse response = LoginResponse.builder()
+                    .token(token)
+                    .tipoToken("Bearer")
+                    .email(usuario.getEmail().getValor())
+                    .nombreCompleto(usuario.getNombreCompleto())
+                    .rol(usuario.getRol().name())
+                    .expiracion(LocalDateTime.ofInstant(expiracion.toInstant(), ZoneId.systemDefault()))
+                    .activo(usuario.estaActivo())
+                    .build();
+            log.debug("LoginResponse creado exitosamente: {}", response);
+            return response;
+        } catch (Exception e) {
+            log.error("Error construyendo LoginResponse", e);
+
+            // Respuesta de respaldo sin fecha de expiración para debug
+            return LoginResponse.builder()
+                    .token(token)
+                    .tipoToken("Bearer")
+                    .email(usuario.getEmail().getValor())
+                    .nombreCompleto(usuario.getNombreCompleto())
+                    .rol(usuario.getRol().name())
+                    .expiracion(LocalDateTime.now().plusDays(1)) // Fecha fija temporal
+                    .activo(usuario.estaActivo())
+                    .build();
         }
     }
 

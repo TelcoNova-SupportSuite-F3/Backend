@@ -17,7 +17,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Implementación del repositorio de materiales usando JPA
@@ -52,7 +51,7 @@ public class MaterialRepositoryImpl implements IMaterialRepository {
         return materialJpaRepository.buscarPorNombreConLimite(nombreBusqueda, PageRequest.of(0, limite))
                 .stream()
                 .map(materialMapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -69,7 +68,7 @@ public class MaterialRepositoryImpl implements IMaterialRepository {
         return materialJpaRepository.findByActivoTrue()
                 .stream()
                 .map(materialMapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -86,7 +85,7 @@ public class MaterialRepositoryImpl implements IMaterialRepository {
         return materialUtilizadoJpaRepository.findMaterialesUtilizadosPorOrden(ordenTrabajoId)
                 .stream()
                 .map(materialUtilizadoMapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -108,7 +107,7 @@ public class MaterialRepositoryImpl implements IMaterialRepository {
         return materialJpaRepository.findMaterialesConStockBajo(stockMinimo)
                 .stream()
                 .map(materialMapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

@@ -16,7 +16,7 @@ public class ValidacionUtil {
     );
 
     private static final Pattern TELEFONO_PATTERN = Pattern.compile(
-            "^(\\+57\\s?)?(3[0-9]{2}|[2-8][0-9])\\s?[0-9]{3}\\s?[0-9]{4}$"
+            "^(\\+57\\s?)?(3\\d{2}|[2-8]\\d)\\s?\\d{3}\\s?\\d{4}$"
     );
 
     private static final Pattern NUMERO_ORDEN_PATTERN = Pattern.compile(

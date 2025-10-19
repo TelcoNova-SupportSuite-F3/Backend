@@ -12,7 +12,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Implementación del repositorio de usuarios usando JPA
@@ -59,7 +58,7 @@ public class UsuarioRepositoryImpl implements IUsuarioRepository {
         return jpaRepository.findByActivoTrue()
                 .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -68,6 +67,6 @@ public class UsuarioRepositoryImpl implements IUsuarioRepository {
         return jpaRepository.findByRolAndActivoTrue(rol)
                 .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

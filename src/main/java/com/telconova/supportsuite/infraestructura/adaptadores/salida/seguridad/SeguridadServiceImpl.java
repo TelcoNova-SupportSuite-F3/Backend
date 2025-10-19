@@ -25,7 +25,6 @@ import java.util.function.Function;
 @Service
 public class SeguridadServiceImpl implements ISeguridadService {
 
-    private final String jwtSecret;
     private final long jwtExpiration;
     private final PasswordEncoder passwordEncoder;
     private final SecretKey secretKey;
@@ -33,7 +32,6 @@ public class SeguridadServiceImpl implements ISeguridadService {
     public SeguridadServiceImpl(
             @Value("${security.jwt.secret-key}") String jwtSecret,
             @Value("${security.jwt.expiration}") long jwtExpiration) {
-        this.jwtSecret = jwtSecret;
         this.jwtExpiration = jwtExpiration;
         this.passwordEncoder = new BCryptPasswordEncoder(12);
         this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
@@ -72,7 +70,6 @@ public class SeguridadServiceImpl implements ISeguridadService {
     public boolean validarTokenJwt(String token) {
         try {
             log.debug("Validando token JWT");
-            Claims claims = extraerTodosLosClaims(token);
             return !tokenHaExpirado(token);
         } catch (Exception e) {
             log.warn("Token JWT inválido: {}", e.getMessage());

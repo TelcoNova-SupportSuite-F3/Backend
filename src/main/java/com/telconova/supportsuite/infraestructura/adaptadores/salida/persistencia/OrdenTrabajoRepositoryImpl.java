@@ -13,7 +13,6 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Implementación del repositorio de órdenes de trabajo usando JPA
@@ -54,7 +53,7 @@ public class OrdenTrabajoRepositoryImpl implements IOrdenTrabajoRepository {
         return jpaRepository.findOrdenesActivasPorTecnico(tecnicoId)
                 .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -63,7 +62,7 @@ public class OrdenTrabajoRepositoryImpl implements IOrdenTrabajoRepository {
         return jpaRepository.findAll()
                 .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -72,7 +71,7 @@ public class OrdenTrabajoRepositoryImpl implements IOrdenTrabajoRepository {
         return jpaRepository.findByEstado(estado)
                 .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -81,7 +80,7 @@ public class OrdenTrabajoRepositoryImpl implements IOrdenTrabajoRepository {
         return jpaRepository.findByTecnicoAsignadoIdAndEstado(tecnicoId, estado)
                 .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -103,6 +102,6 @@ public class OrdenTrabajoRepositoryImpl implements IOrdenTrabajoRepository {
         return jpaRepository.findOrdenesVencidas(fechaLimite)
                 .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

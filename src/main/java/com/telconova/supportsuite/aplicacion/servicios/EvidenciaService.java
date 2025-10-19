@@ -1,20 +1,20 @@
 package com.telconova.supportsuite.aplicacion.servicios;
 
+import com.telconova.supportsuite.aplicacion.dto.request.RegistrarEvidenciaRequest;
+import com.telconova.supportsuite.aplicacion.dto.response.EvidenciaResponse;
 import com.telconova.supportsuite.aplicacion.puertos.entrada.IEvidenciaService;
+import com.telconova.supportsuite.aplicacion.puertos.salida.IAlmacenamientoArchivos;
 import com.telconova.supportsuite.aplicacion.puertos.salida.IEvidenciaRepository;
 import com.telconova.supportsuite.aplicacion.puertos.salida.IOrdenTrabajoRepository;
 import com.telconova.supportsuite.aplicacion.puertos.salida.IUsuarioRepository;
-import com.telconova.supportsuite.aplicacion.puertos.salida.IAlmacenamientoArchivos;
-import com.telconova.supportsuite.aplicacion.dto.request.RegistrarEvidenciaRequest;
-import com.telconova.supportsuite.aplicacion.dto.response.EvidenciaResponse;
 import com.telconova.supportsuite.dominio.entidades.Evidencia;
 import com.telconova.supportsuite.dominio.entidades.OrdenTrabajo;
 import com.telconova.supportsuite.dominio.entidades.Usuario;
 import com.telconova.supportsuite.dominio.enums.EstadoOrden;
-import com.telconova.supportsuite.dominio.excepciones.OrdenFinalizadaExcepcion;
-import com.telconova.supportsuite.dominio.excepciones.OrdenNoEncontradaExcepcion;
 import com.telconova.supportsuite.dominio.excepciones.AccesoNoAutorizadoExcepcion;
 import com.telconova.supportsuite.dominio.excepciones.EvidenciaNoValidaExcepcion;
+import com.telconova.supportsuite.dominio.excepciones.OrdenFinalizadaExcepcion;
+import com.telconova.supportsuite.dominio.excepciones.OrdenNoEncontradaExcepcion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Servicio de aplicación para operaciones con evidencias
@@ -39,6 +38,8 @@ public class EvidenciaService implements IEvidenciaService {
     private final IUsuarioRepository usuarioRepository;
     private final IAlmacenamientoArchivos almacenamientoArchivos;
 
+    private static final String MENSAJE_USUARIO_NO_ENCONTRADO = "Usuario no encontrado: ";
+
     @Override
     @Transactional
     public EvidenciaResponse registrarComentario(Long ordenId, String comentario, String emailUsuario) {
@@ -49,7 +50,7 @@ public class EvidenciaService implements IEvidenciaService {
 
         // Obtener usuario
         Usuario usuario = usuarioRepository.buscarPorEmail(emailUsuario)
-                .orElseThrow(() -> new OrdenNoEncontradaExcepcion("Usuario no encontrado: " + emailUsuario));
+                .orElseThrow(() -> new OrdenNoEncontradaExcepcion(MENSAJE_USUARIO_NO_ENCONTRADO + emailUsuario));
 
         // Crear evidencia de comentario
         Evidencia evidencia = Evidencia.crearComentario(ordenId, comentario, usuario.getId());
@@ -81,7 +82,7 @@ public class EvidenciaService implements IEvidenciaService {
 
         // Obtener usuario
         Usuario usuario = usuarioRepository.buscarPorEmail(emailUsuario)
-                .orElseThrow(() -> new OrdenNoEncontradaExcepcion("Usuario no encontrado: " + emailUsuario));
+                .orElseThrow(() -> new OrdenNoEncontradaExcepcion(MENSAJE_USUARIO_NO_ENCONTRADO + emailUsuario));
 
         // Guardar archivo
         String rutaArchivo = almacenamientoArchivos.guardarArchivo(archivo, "evidencias");
@@ -166,7 +167,7 @@ public class EvidenciaService implements IEvidenciaService {
                             .orElse("Usuario desconocido");
                     return mapearAResponse(evidencia, nombreCreador);
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -178,7 +179,7 @@ public class EvidenciaService implements IEvidenciaService {
                 .orElseThrow(() -> new OrdenNoEncontradaExcepcion("Evidencia no encontrada: " + evidenciaId));
 
         Usuario usuario = usuarioRepository.buscarPorEmail(emailUsuario)
-                .orElseThrow(() -> new OrdenNoEncontradaExcepcion("Usuario no encontrado: " + emailUsuario));
+                .orElseThrow(() -> new OrdenNoEncontradaExcepcion(MENSAJE_USUARIO_NO_ENCONTRADO+ emailUsuario));
 
         // Verificar que el usuario puede eliminar la evidencia
         if (!usuario.esAdministrador() && !evidencia.getCreadoPor().equals(usuario.getId())) {
@@ -217,7 +218,7 @@ public class EvidenciaService implements IEvidenciaService {
                 .orElseThrow(() -> OrdenNoEncontradaExcepcion.porId(ordenId));
 
         Usuario usuario = usuarioRepository.buscarPorEmail(emailUsuario)
-                .orElseThrow(() -> new OrdenNoEncontradaExcepcion("Usuario no encontrado: " + emailUsuario));
+                .orElseThrow(() -> new OrdenNoEncontradaExcepcion(MENSAJE_USUARIO_NO_ENCONTRADO + emailUsuario));
 
         // Verificar acceso según el rol
         if (!usuario.esAdministrador() && !orden.estaAsignadaATecnico(usuario.getId())) {
@@ -233,7 +234,7 @@ public class EvidenciaService implements IEvidenciaService {
                 .orElseThrow(() -> OrdenNoEncontradaExcepcion.porId(ordenId));
 
         Usuario usuario = usuarioRepository.buscarPorEmail(emailUsuario)
-                .orElseThrow(() -> new OrdenNoEncontradaExcepcion("Usuario no encontrado: " + emailUsuario));
+                .orElseThrow(() -> new OrdenNoEncontradaExcepcion(MENSAJE_USUARIO_NO_ENCONTRADO+ emailUsuario));
 
         // Verificar acceso según el rol
         if (!usuario.esAdministrador() && !orden.estaAsignadaATecnico(usuario.getId())) {
@@ -259,7 +260,7 @@ public class EvidenciaService implements IEvidenciaService {
         }
 
         // Validar tamaño
-        long tamaanoMaximo = 10 * 1024 * 1024; // 10MB
+        long tamaanoMaximo = 10L * 1024L * 1024L; // 10MB
         if (archivo.getSize() > tamaanoMaximo) {
             throw EvidenciaNoValidaExcepcion.archivoMuyGrande(archivo.getSize(), tamaanoMaximo);
         }

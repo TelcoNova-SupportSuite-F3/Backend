@@ -3,6 +3,7 @@ package com.telconova.supportsuite.infraestructura.adaptadores.salida.almacenami
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.telconova.supportsuite.aplicacion.puertos.salida.IAlmacenamientoArchivos;
+import com.telconova.supportsuite.dominio.excepciones.AlmacenamientoArchivoExcepcion;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
@@ -73,7 +74,7 @@ public class CloudinaryAlmacenamientoImpl implements IAlmacenamientoArchivos {
 
         } catch (IOException e) {
             log.error("Error guardando archivo en Cloudinary: {}", archivo.getOriginalFilename(), e);
-            throw new RuntimeException("Error al guardar archivo en Cloudinary: " + e.getMessage(), e);
+            throw new AlmacenamientoArchivoExcepcion("Error al guardar archivo en Cloudinary: " + e.getMessage(), e);
         }
     }
 
@@ -96,7 +97,7 @@ public class CloudinaryAlmacenamientoImpl implements IAlmacenamientoArchivos {
 
         } catch (IOException e) {
             log.error("Error eliminando archivo de Cloudinary: {}", rutaArchivo, e);
-            throw new RuntimeException("Error al eliminar archivo de Cloudinary", e);
+            throw new AlmacenamientoArchivoExcepcion("Error al eliminar archivo de Cloudinary", e);
         }
     }
 
@@ -120,7 +121,7 @@ public class CloudinaryAlmacenamientoImpl implements IAlmacenamientoArchivos {
 
         // Generar URL optimizada para web con transformaciones automáticas
         return cloudinary.url()
-                .transformation(new com.cloudinary.Transformation()
+                .transformation(new com.cloudinary.Transformation<>()
                         .quality("auto")
                         .fetchFormat("auto")
                         .dpr("auto"))
@@ -197,7 +198,7 @@ public class CloudinaryAlmacenamientoImpl implements IAlmacenamientoArchivos {
      */
     public String obtenerUrlConTransformacion(String publicId, int ancho, int alto) {
         return cloudinary.url()
-                .transformation(new com.cloudinary.Transformation()
+                .transformation(new com.cloudinary.Transformation<>()
                         .width(ancho)
                         .height(alto)
                         .crop("fill")
