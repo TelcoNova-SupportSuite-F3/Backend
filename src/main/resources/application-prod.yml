@@ -11,9 +11,7 @@ server:
 spring:
   # Base de datos de producción
   datasource:
-    url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
-    username: ${PGUSER}
-    password: ${PGPASSWORD}
+    url: ${POSTGRES_URL_NON_POOLING}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 10

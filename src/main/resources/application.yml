@@ -267,5 +267,5 @@ api:
   base-url:
     development: ${API_BASE_URL_DEVELOPMENT:http://localhost:8080}
     testing: ${API_BASE_URL_TESTING:https://api-test.telconova.com}
-    production: ${API_BASE_URL_PRODUCTION}
+    #production: ${API_BASE_URL_PRODUCTION}
 

@@ -305,7 +305,7 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>9.0.7</version>
+                <version>10.0.4</version>
                 <configuration>
                     <!-- Configuración de API -->
                     <nvdApiKey>${nvd.api.key}</nvdApiKey>
