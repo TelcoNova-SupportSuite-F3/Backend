@@ -73,7 +73,7 @@ Microservicio seguro para la gestión y trazabilidad de órdenes de trabajo. Man
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/telconova/supportsuite.git
+git clone https://github.com/TelcoNova-SupportSuite-F3/Backend
 cd supportsuite
 
 # 2. Configurar base de datos
@@ -83,7 +83,7 @@ psql -d telconova_db -f scripts/database/schema_creation.sql
 # 3. Configurar variables de entorno
 export DB_HOST=localhost
 export DB_PASSWORD=TelcoN0v4_2025!
-export JWT_SECRET=your-secret-key
+export JWT_SECRET=secret-key
 
 # 4. Compilar y ejecutar
 mvn clean install
@@ -94,7 +94,7 @@ mvn spring-boot:run
 
 ```bash
 # 1. Clonar repositorio
-git clone https://github.com/telconova/supportsuite.git
+git clone https://github.com/TelcoNova-SupportSuite-F3/Backend
 cd supportsuite
 
 # 2. Levantar servicios
@@ -119,7 +119,7 @@ curl http://localhost:8080/api/v1/actuator/health
 ### 🌐 Acceder al Sistema
 
 - **API Base URL**: `http://localhost:8080/api/v1`
-- **Documentación Swagger**: `http://localhost:8080/api/v1/swagger-ui.html`
+- **Documentación Swagger**: `http://localhost:8080/swagger-ui/index.html`
 - **Métricas**: `http://localhost:8080/api/v1/actuator/prometheus`
 - **Grafana** (si usar Docker): `http://localhost:3000` (admin/TelcoNova2025!)
 

@@ -4,51 +4,54 @@ AtributoValorProyectoTelcoNova SupportSuiteFeature3 - Seguimiento de Órdenes en
 
 🏗️ Arquitectura del Sistema
 Arquitectura Hexagonal
+```
 ┌─────────────────────────────────────────────────────────────┐
 │                    ADAPTADORES PRIMARIOS                    │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │ REST API    │  │   Swagger   │  │  Métricas   │         │
-│  │Controllers  │  │    Docs     │  │ Actuator    │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │ REST API    │  │   Swagger   │  │  Métricas   │          │
+│  │Controllers  │  │    Docs     │  │ Actuator    │          │
+│  └─────────────┘  └─────────────┘  └─────────────┘          │
 └─────────────────────────────────────────────────────────────┘
-│
-▼
+                                 │
+                                 ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    CAPA DE APLICACIÓN                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │   Use Cases │  │    DTOs     │  │   Puertos   │         │
-│  │  Services   │  │ Req/Resp    │  │ Interfaces  │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │   Use Cases │  │    DTOs     │  │   Puertos   │          │
+│  │  Services   │  │ Req/Resp    │  │ Interfaces  │          │
+│  └─────────────┘  └─────────────┘  └─────────────┘          │
 └─────────────────────────────────────────────────────────────┘
-│
-▼
+                                  │
+                                  ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                      DOMINIO CORE                           │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │ Entidades   │  │    Enums    │  │ Value Objs  │         │
-│  │   Domain    │  │   Estados   │  │   Email     │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │ Entidades   │  │    Enums    │  │ Value Objs  │          │
+│  │   Domain    │  │   Estados   │  │   Email     │          │
+│  └─────────────┘  └─────────────┘  └─────────────┘          │
 └─────────────────────────────────────────────────────────────┘
-│
-▼
+                                  │
+                                  ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                  ADAPTADORES SECUNDARIOS                    │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │ PostgreSQL  │  │ File Storage│  │   Security  │         │
-│  │ Repository  │  │   S3/Local  │  │    JWT      │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │ PostgreSQL  │  │ File Storage│  │   Security  │          │
+│  │ Repository  │  │   S3/Local  │  │    JWT      │          │
+│  └─────────────┘  └─────────────┘  └─────────────┘          │
 └─────────────────────────────────────────────────────────────┘
+```
 Principios SOLID Aplicados
 
-Single Responsibility: Cada clase tiene una única responsabilidad
-Open/Closed: Extensible sin modificar código existente
-Liskov Substitution: Las implementaciones son intercambiables
-Interface Segregation: Interfaces específicas y cohesivas
-Dependency Inversion: Dependencias hacia abstracciones
+- Single Responsibility: Cada clase tiene una única responsabilidad
+- Open/Closed: Extensible sin modificar código existente
+- Liskov Substitution: Las implementaciones son intercambiables
+- Interface Segregation: Interfaces específicas y cohesivas
+- Dependency Inversion: Dependencias hacia abstracciones
 
 
 🗄️ Modelo de Datos
-Diagrama MER
+```
+- Diagrama MER
 mermaiderDiagram
 USUARIO {
 bigint id PK
@@ -110,7 +113,8 @@ CREATE INDEX idx_ordenes_tecnico_estado ON ordenes_trabajo(tecnico_asignado_id, 
 CREATE INDEX idx_evidencias_orden_fecha ON evidencias(orden_trabajo_id, fecha_creacion);
 CREATE INDEX idx_materiales_nombre_activo ON materiales(nombre, activo);
 CREATE INDEX idx_usuarios_email_activo ON usuarios(email, activo);
-
+```
+```
 🔐 Seguridad Implementada
 Autenticación JWT
 java// Configuración JWT
@@ -134,134 +138,121 @@ content-type-options: nosniff
 xss-protection: "1; mode=block"
 referrer-policy: no-referrer
 csp: "default-src 'self'"
+```
 
 📊 API Endpoints
-Autenticación
-MétodoEndpointDescripciónAutenticaciónPOST/auth/loginIniciar sesiónNoPOST/auth/refreshRenovar tokenJWTPOST/auth/logoutCerrar sesiónJWT
-Órdenes de Trabajo
-MétodoEndpointDescripciónRolGET/ordenes/mis-ordenesÓrdenes del técnicoTECNICOGET/ordenes/todasTodas las órdenesADMINGET/ordenes/{id}Detalle de ordenTECNICO/ADMINPUT/ordenes/{id}/estadoActualizar estadoTECNICOPOST/ordenes/{id}/finalizarFinalizar ordenTECNICO
-Evidencias
-MétodoEndpointDescripciónRolPOST/ordenes/{id}/evidencias/comentarioAgregar comentarioTECNICOPOST/ordenes/{id}/evidencias/fotoSubir fotoTECNICOGET/ordenes/{id}/evidenciasListar evidenciasTECNICO/ADMINDELETE/evidencias/{id}Eliminar evidenciaTECNICO/ADMIN
-Materiales
-MétodoEndpointDescripciónRolGET/materiales/buscar?q={query}Buscar materialesTECNICOPOST/ordenes/{id}/materialesAgregar materialTECNICOGET/materialesListar materialesADMINPOST/materialesCrear materialADMIN
+## 📡 API Endpoints
+
+### 🔐 Autenticación
+
+| Método | Endpoint | Descripción | Autenticación |
+|--------|----------|-------------|---------------|
+| POST | `/auth/login` | Iniciar sesión | No |
+| POST | `/auth/refresh` | Renovar token | JWT |
+| POST | `/auth/logout` | Cerrar sesión | JWT |
+
+### 📋 Órdenes de Trabajo
+
+| Método | Endpoint | Descripción | Rol |
+|--------|----------|-------------|-----|
+| GET | `/ordenes/mis-ordenes` | Órdenes del técnico | TECNICO |
+| GET | `/ordenes/todas` | Todas las órdenes | ADMIN |
+| GET | `/ordenes/{id}` | Detalle de orden | TECNICO/ADMIN |
+| PUT | `/ordenes/{id}/estado` | Actualizar estado | TECNICO |
+| POST | `/ordenes/{id}/finalizar` | Finalizar orden | TECNICO |
+
+### 📸 Evidencias
+
+| Método | Endpoint | Descripción | Rol |
+|--------|----------|-------------|-----|
+| POST | `/ordenes/{id}/evidencias/comentario` | Agregar comentario | TECNICO |
+| POST | `/ordenes/{id}/evidencias/foto` | Subir foto | TECNICO |
+| GET | `/ordenes/{id}/evidencias` | Listar evidencias | TECNICO/ADMIN |
+| DELETE | `/evidencias/{id}` | Eliminar evidencia | TECNICO/ADMIN |
+
+### 🔧 Materiales
+
+| Método | Endpoint | Descripción | Rol |
+|--------|----------|-------------|-----|
+| GET | `/materiales/buscar?q={query}` | Buscar materiales | TECNICO |
+| POST | `/ordenes/{id}/materiales` | Agregar material | TECNICO |
+| GET | `/materiales` | Listar materiales | ADMIN |
+| POST | `/materiales` | Crear material | ADMIN |
 
 🧪 Testing Strategy
 Pirámide de Testing
-/\
-/  \
-/ E2E \     ← 10% - Tests End-to-End
-/______\
-/        \
-/Integration\   ← 20% - Tests de Integración
-/__________\
-/            \
-/    Unit      \   ← 70% - Tests Unitarios
-/______________\
-Cobertura de Testing
+```
+_______
+|      \
+|       \
+|   E2E  \     ← 10% - Tests End-to-End
+|_________\
+|          \
+|Integration\   ← 20% - Tests de Integración
+|____________\
+|             \
+|    Unit      \   ← 70% - Tests Unitarios
+|_______________\
+```
 
-Unit Tests: 85%+ cobertura
-Integration Tests: Componentes críticos
-E2E Tests: Flujos principales de usuario
-Security Tests: OWASP ZAP scanning
-Performance Tests: JMeter load testing
+# Cobertura de Testing
 
-Comandos de Testing
-bash# Tests unitarios
-mvn test
+- Unit Tests: 85%+ cobertura
+- Integration Tests: Componentes críticos
+- E2E Tests: Flujos principales de usuario
+- Security Tests: OWASP ZAP scanning
+- Performance Tests: Sonarcloud load testing
 
-# Tests de integración
-mvn integration-test
 
-# Tests con cobertura
-mvn jacoco:prepare-agent test jacoco:report
 
-# Tests de seguridad
-mvn dependency-check:check
+# 📈 Métricas y Monitoreo
+## Métricas Expuestas
+### Métricas de Aplicación
+- telconova.ordenes.activas: Gauge
+- telconova.ordenes.finalizadas.total: Counter
+- telconova.materiales.utilizados.total: Counter
+- telconova.usuarios.activos: Gauge
+- telconova.evidencias.subidas.total: Counter
 
-📈 Métricas y Monitoreo
-Métricas Expuestas
-Métricas de Aplicación
-yaml# Custom metrics
-telconova.ordenes.activas: Gauge
-telconova.ordenes.finalizadas.total: Counter
-telconova.materiales.utilizados.total: Counter
-telconova.usuarios.activos: Gauge
-telconova.evidencias.subidas.total: Counter
-Métricas de Sistema
+### Métricas de Sistema
 yaml# Spring Boot Actuator
-jvm.memory.used
-jvm.threads.live
-http.server.requests
-system.cpu.usage
-Dashboards Grafana
+- jvm.memory.used
+- jvm.threads.live
+- http.server.requests
+- system.cpu.usage
 
-Dashboard Operacional
+## Dashboards Grafana
 
-Órdenes por estado
-Tiempo promedio de resolución
-Técnicos más activos
-Materiales más utilizados
+### Dashboard Operacional
 
+- Órdenes por estado
+- Tiempo promedio de resolución
+- Técnicos más activos
+- Materiales más utilizados
 
-Dashboard Técnico
+### Dashboard Técnico
 
-Métricas de JVM
-Response time por endpoint
-Error rates
-Database connections
-
-
-Dashboard de Negocio
-
-KPIs de productividad
-Costo de materiales
-Satisfaction scores
-Tendencias mensuales
+- Métricas de JVM
+- Response time por endpoint
+- Error rates
+- Database connections
 
 
+### Dashboard de Negocio
 
+- KPIs de productividad
+- Costo de materiales
+- Satisfaction scores
+- Tendencias mensuales
 
-🚀 Despliegue
-Entornos
-bash# Desarrollo
-mvn spring-boot:run -Dspring.profiles.active=dev
-
-# Testing
-mvn spring-boot:run -Dspring.profiles.active=test
-
-# Producción
-java -jar -Dspring.profiles.active=prod app.jar
-Variables de Entorno Críticas
-bash# Base de datos
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=telconova_db
-DB_USER=telconova_app
-DB_PASSWORD=${DB_PASSWORD}
-
-# JWT Security
-JWT_SECRET=${JWT_SECRET_KEY}
-JWT_EXPIRATION=86400000
-
-# File Storage
-STORAGE_TYPE=s3
-S3_BUCKET_NAME=${BUCKET_NAME}
-S3_ACCESS_KEY=${AWS_ACCESS_KEY}
-S3_SECRET_KEY=${AWS_SECRET_KEY}
-Docker Deployment
-bash# Build y push
-docker build -t telconova/supportsuite:1.0.0 .
-docker push telconova/supportsuite:1.0.0
 
 # Deploy con docker-compose
 docker-compose up -d
 
-# Scaling
-docker-compose up --scale app=3
-
 🔍 Troubleshooting
 Logs Estructurados
-json{
+```json5
+{
 "timestamp": "2025-01-15T10:30:00.000Z",
 "level": "INFO",
 "thread": "http-nio-8080-exec-1",
@@ -271,8 +262,9 @@ json{
 "userId": "juan.perez@telconova.com",
 "orderId": "123",
 "requestId": "abc-def-ghi"
+  }
 }
-}
+```
 Health Checks
 bash# Application health
 curl http://localhost:8080/api/v1/actuator/health

@@ -11,9 +11,9 @@ import java.util.regex.Pattern;
 public class Telefono {
 
     // Patrones para validación de teléfonos colombianos
-    private static final Pattern PATRON_MOVIL = Pattern.compile("^\\+57\\s?3\\d{2}\\s?\\d{3}\\s?\\d{4}$");
-    private static final Pattern PATRON_FIJO = Pattern.compile("^\\+57\\s?[1-9]\\s?\\d{3}\\s?\\d{4}$");
-    private static final Pattern PATRON_FIJO_MEDELLIN = Pattern.compile("^\\+57\\s?4\\s?\\d{3}\\s?\\d{4}$");
+    private static final Pattern PATRON_MOVIL = Pattern.compile("^\\+573\\d{9}$");
+    private static final Pattern PATRON_FIJO = Pattern.compile("^\\+57[1-9]\\d{7}$");
+    private static final Pattern PATRON_FIJO_MEDELLIN = Pattern.compile("^\\+574\\d{7}$");
 
     private final String valor;
 
@@ -32,13 +32,12 @@ public class Telefono {
         String telefonoLimpio = telefono.trim();
 
         // Normalizar el formato removiendo espacios extra para validación
-        String telefonoParaValidacion = telefonoLimpio.replaceAll("\\s+", " ");
+        String telefonoParaValidacion = telefonoLimpio.replaceAll("\\s+", "");
 
         if (!esValidoParaColombia(telefonoParaValidacion)) {
             throw new DominioExcepcion("El formato del teléfono no es válido para Colombia. " +
                     "Formatos válidos: +573XXXXXXXXX (móvil), +57XXXXXXXX (fijo)");
         }
-
         return new Telefono(telefonoLimpio);
     }
 
@@ -65,14 +64,14 @@ public class Telefono {
      * Verifica si es un número móvil
      */
     public boolean esMovil() {
-        return PATRON_MOVIL.matcher(this.valor.replaceAll("\\s+", " ")).matches();
+        return PATRON_MOVIL.matcher(this.valor.replaceAll("\\s+", "")).matches();
     }
 
     /**
      * Verifica si es un número fijo
      */
     public boolean esFijo() {
-        String normalizado = this.valor.replaceAll("\\s+", " ");
+        String normalizado = this.valor.replaceAll("\\s+", "");
         return PATRON_FIJO.matcher(normalizado).matches() ||
                 PATRON_FIJO_MEDELLIN.matcher(normalizado).matches();
     }
