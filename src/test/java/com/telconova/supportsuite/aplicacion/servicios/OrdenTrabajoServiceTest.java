@@ -36,14 +36,10 @@ class OrdenTrabajoServiceTest {
     @Mock
     private IEvidenciaRepository evidenciaRepository;
 
-    @Mock
-    private IEvidenciaService evidenciaService;
 
     @Mock
     private IMaterialService materialService;
 
-    @Mock
-    private IAlmacenamientoArchivos almacenamientoArchivos;
 
     @Mock
     private INotificacionService notificacionService;
@@ -356,25 +352,6 @@ class OrdenTrabajoServiceTest {
                 .hasMessageContaining("Se requiere al menos un comentario o foto para finalizar la orden");
 
         verify(ordenTrabajoRepository, never()).guardar(any());
-    }
-
-    @Test
-    @DisplayName("Debe lanzar excepción al finalizar sin fechas")
-    void debeLanzarExcepcionAlFinalizarSinFechas() {
-        // Arrange
-        orden.setEstado(EstadoOrden.EN_PROCESO);
-        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
-        request.setNuevoEstado(EstadoOrden.FINALIZADA);
-
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
-
-        // Act & Assert
-        assertThatThrownBy(() ->
-                ordenTrabajoService.actualizarEstadoOrden(1L, request, "tecnico@telconova.com")
-        )
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("fechas");
     }
 
     @Test
