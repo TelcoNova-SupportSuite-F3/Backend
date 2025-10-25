@@ -11,9 +11,9 @@ import java.util.regex.Pattern;
 public class Telefono {
 
     // Patrones para validación de teléfonos colombianos
-    private static final Pattern PATRON_MOVIL = Pattern.compile("^\\+57\\s?3\\d{2}\\s?\\d{7}$");
-    private static final Pattern PATRON_FIJO = Pattern.compile("^\\+57\\s?[1-9]\\s?\\d{7}$");
-    private static final Pattern PATRON_FIJO_MEDELLIN = Pattern.compile("^\\+57\\s?4\\s?\\d{7}$");
+    private static final Pattern PATRON_MOVIL = Pattern.compile("^\\+57\\s?3\\d{2}\\s?\\d{3}\\s?\\d{4}$");
+    private static final Pattern PATRON_FIJO = Pattern.compile("^\\+57\\s?[1-9]\\s?\\d{3}\\s?\\d{4}$");
+    private static final Pattern PATRON_FIJO_MEDELLIN = Pattern.compile("^\\+57\\s?4\\s?\\d{3}\\s?\\d{4}$");
 
     private final String valor;
 
@@ -36,7 +36,7 @@ public class Telefono {
 
         if (!esValidoParaColombia(telefonoParaValidacion)) {
             throw new DominioExcepcion("El formato del teléfono no es válido para Colombia. " +
-                    "Formatos válidos: +57 3XX XXXXXXX (móvil), +57 X XXXXXXX (fijo)");
+                    "Formatos válidos: +573XXXXXXXXX (móvil), +57XXXXXXXX (fijo)");
         }
 
         return new Telefono(telefonoLimpio);
