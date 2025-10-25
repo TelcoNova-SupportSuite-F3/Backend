@@ -176,9 +176,6 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
                 log.info("Orden {} cancelada por usuario: {}", ordenId, emailUsuario);
             }
             case FINALIZADA -> {
-                if (request.getFechaInicioTrabajo() == null || request.getFechaFinTrabajo() == null) {
-                    throw new IllegalArgumentException("Las fechas de inicio y fin son obligatorias para finalizar");
-                }
                 long cantidadEvidencias = evidenciaRepository.contarEvidenciasPorOrden(ordenId);
                 if (cantidadEvidencias == 0) {
                     throw new DominioExcepcion("Se requiere al menos un comentario o foto para finalizar la orden");
@@ -187,8 +184,7 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
                     throw EstadoOrdenInvalidoExcepcion.paraFinalizar(orden.getEstado());
                 }
                 orden.setEstado(EstadoOrden.FINALIZADA);
-                orden.setFechaInicioTrabajo(request.getFechaInicioTrabajo());
-                orden.setFechaFinTrabajo(request.getFechaFinTrabajo());
+                orden.setFechaFinTrabajo(LocalDateTime.now());
                 orden.setFechaActualizacion(LocalDateTime.now());
             }
             case ASIGNADA -> orden.reanudar();
