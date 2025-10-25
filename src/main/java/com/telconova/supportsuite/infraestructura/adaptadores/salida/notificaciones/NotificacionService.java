@@ -26,7 +26,7 @@ public class NotificacionService implements INotificacionService {
     private String supervisorEmail;
 
     public NotificacionService(
-            @Qualifier("emailNotificacion") INotificacionStrategy emailStrategy,
+            @Qualifier("sendgridNotificacion") INotificacionStrategy emailStrategy,
             @Qualifier("whatsappNotificacion") INotificacionStrategy whatsappStrategy) {
         this.emailStrategy = emailStrategy;
         this.whatsappStrategy = whatsappStrategy;

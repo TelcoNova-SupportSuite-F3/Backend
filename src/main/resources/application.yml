@@ -127,6 +127,10 @@ spring:
 app:
   notificaciones:
     supervisor-email: ${SUPERVISOR_EMAIL}
+  sendgrid:
+    api-key: ${SENDGRID_API_KEY}
+    from-email: ${SENDGRID_FROM_EMAIL}
+    from-name: ${SENDGRID_FROM_NAME}
 
   # Configuración de Twilio
   twilio:
