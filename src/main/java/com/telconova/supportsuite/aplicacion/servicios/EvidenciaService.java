@@ -17,6 +17,8 @@ import com.telconova.supportsuite.dominio.excepciones.OrdenFinalizadaExcepcion;
 import com.telconova.supportsuite.dominio.excepciones.OrdenNoEncontradaExcepcion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,8 +39,14 @@ public class EvidenciaService implements IEvidenciaService {
     private final IOrdenTrabajoRepository ordenTrabajoRepository;
     private final IUsuarioRepository usuarioRepository;
     private final IAlmacenamientoArchivos almacenamientoArchivos;
+    private IEvidenciaService self;
 
     private static final String MENSAJE_USUARIO_NO_ENCONTRADO = "Usuario no encontrado: ";
+
+    @Autowired
+    public void setSelf(@Lazy IEvidenciaService self) {
+        this.self = self;
+    }
 
     @Override
     @Transactional
@@ -136,17 +144,17 @@ public class EvidenciaService implements IEvidenciaService {
 
         // Si solo hay comentario
         if (!tieneFoto) {
-            return registrarComentario(ordenId, request.getComentario(), emailUsuario);
+            return self.registrarComentario(ordenId, request.getComentario(), emailUsuario);
         }
 
         // Si solo hay foto
         if (!tieneComentario) {
-            return registrarFoto(ordenId, request.getFoto(), emailUsuario);
+            return self.registrarFoto(ordenId, request.getFoto(), emailUsuario);
         }
 
         // Si hay ambos, registrar primero la foto con comentario como descripción adicional
-        EvidenciaResponse fotoResponse = registrarFoto(ordenId, request.getFoto(), emailUsuario);
-        registrarComentario(ordenId, request.getComentario(), emailUsuario);
+        EvidenciaResponse fotoResponse = self.registrarFoto(ordenId, request.getFoto(), emailUsuario);
+        self.registrarComentario(ordenId, request.getComentario(), emailUsuario);
 
         return fotoResponse; // Retornar la respuesta de la foto como principal
     }

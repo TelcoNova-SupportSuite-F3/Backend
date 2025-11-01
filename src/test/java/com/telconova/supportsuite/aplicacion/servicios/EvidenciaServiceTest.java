@@ -59,7 +59,7 @@ class EvidenciaServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Arrange - Configuración común
+        // Arrange
         tecnico = Usuario.builder()
                 .id(1L)
                 .email(Email.de("tecnico@telconova.com"))
