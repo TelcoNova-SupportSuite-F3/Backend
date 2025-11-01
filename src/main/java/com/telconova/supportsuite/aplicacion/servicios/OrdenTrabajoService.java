@@ -16,6 +16,8 @@ import com.telconova.supportsuite.dominio.excepciones.EstadoOrdenInvalidoExcepci
 import com.telconova.supportsuite.dominio.excepciones.OrdenNoEncontradaExcepcion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +44,12 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
     private final INotificacionService notificacionService;
     private static final String MENSAJE_USUARIO_NO_ENCONTRADO = "Usuario no encontrado: ";
 
+    private IOrdenTrabajoService self;
+
+    @Autowired
+    public void setSelf(@Lazy IOrdenTrabajoService self) {
+        this.self = self;
+    }
 
     @Override
     public List<OrdenTrabajoResponse> obtenerOrdenesPorTecnico(String emailTecnico) {
@@ -146,78 +154,112 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
         EstadoOrden estadoAnterior = orden.getEstado();
         LocalDateTime fechaHoraCambio = LocalDateTime.now();
 
-        // Aplicar el cambio de estado según las reglas de negocio
-        switch (request.getNuevoEstado()) {
-            case EN_PROCESO -> {
-                // Si viene de PAUSADA, reanudar; si viene de ASIGNADA, iniciar
-                if (orden.getEstado() == EstadoOrden.PAUSADA) {
-                    orden.reanudar();
-                    log.info("Orden {} reanudada desde estado PAUSADA", ordenId);
-                } else if (orden.getEstado() == EstadoOrden.ASIGNADA) {
-                    orden.iniciarTrabajo();
-                    log.info("Orden {} iniciada desde estado ASIGNADA", ordenId);
-                }
-            }
-            case PAUSADA -> {
-                orden.pausar();
-                log.info("Orden {} pausada", ordenId);
-            }
-            case CANCELADA -> {
-                orden.setEstado(EstadoOrden.CANCELADA);
-                orden.setFechaFinTrabajo(LocalDateTime.now());
-                orden.setFechaActualizacion(LocalDateTime.now());
-                try {
-                    materialService.devolverMaterialesDeOrden(ordenId);
-                    log.info("Materiales devueltos exitosamente al cancelar orden {}", ordenId);
-                } catch (Exception e) {
-                    log.error("Error al devolver materiales de la orden {}: {}", ordenId, e.getMessage());
-                    throw new DominioExcepcion("Error al devolver materiales: " + e.getMessage());
-                }
-                log.info("Orden {} cancelada por usuario: {}", ordenId, emailUsuario);
-            }
-            case FINALIZADA -> {
-                long cantidadEvidencias = evidenciaRepository.contarEvidenciasPorOrden(ordenId);
-                if (cantidadEvidencias == 0) {
-                    throw new DominioExcepcion("Se requiere al menos un comentario o foto para finalizar la orden");
-                }
-                if (!EstadoOrden.estadosParaFinalizar().contains(orden.getEstado())) {
-                    throw EstadoOrdenInvalidoExcepcion.paraFinalizar(orden.getEstado());
-                }
-                orden.setEstado(EstadoOrden.FINALIZADA);
-                orden.setFechaFinTrabajo(LocalDateTime.now());
-                orden.setFechaActualizacion(LocalDateTime.now());
-            }
-            case ASIGNADA -> orden.reanudar();
-        }
+        aplicarCambioEstado(orden, request.getNuevoEstado(), ordenId);
 
         OrdenTrabajo ordenActualizada = ordenTrabajoRepository.guardar(orden);
 
-        try {
-            CambioEstadoOrdenDTO cambioEstado = CambioEstadoOrdenDTO.builder()
-                    .numeroOrden(ordenActualizada.getNumeroOrden().getValor())
-                    .nombreTecnico(usuario.getNombreCompleto())
-                    .estadoAnterior(estadoAnterior.getDescripcion())
-                    .estadoNuevo(ordenActualizada.getEstado().getDescripcion())
-                    .fechaHoraCambio(fechaHoraCambio)
-                    .clienteNombre(ordenActualizada.getClienteNombre())
-                    .clienteTelefono(ordenActualizada.getClienteTelefono() != null
-                            ? ordenActualizada.getClienteTelefono().toString() : null)
-                    .build();
-
-            // Notificar al supervisor
-            notificacionService.notificarCambioEstadoASupervisor(cambioEstado);
-
-            // Notificar al cliente
-            notificacionService.notificarCambioEstadoACliente(cambioEstado);
-
-            log.info("Notificaciones enviadas para orden {}", ordenId);
-        } catch (Exception e) {
-            log.error("Error al enviar notificaciones para orden {}: {}", ordenId, e.getMessage());
-        }
+        enviarNotificacionesCambioEstado(ordenActualizada, usuario, estadoAnterior, fechaHoraCambio);
 
         log.info("Estado de orden {} actualizado exitosamente a {}", ordenId, request.getNuevoEstado());
 
         return mapearAResponseCompleto(ordenActualizada, emailUsuario);
+    }
+
+    /**
+     * Aplica el cambio de estado según las reglas de negocio
+     */
+    private void aplicarCambioEstado(OrdenTrabajo orden, EstadoOrden nuevoEstado, Long ordenId) {
+        switch (nuevoEstado) {
+            case EN_PROCESO -> procesarTransicionAEnProceso(orden, ordenId);
+            case PAUSADA -> procesarTransicionAPausada(orden, ordenId);
+            case CANCELADA -> procesarTransicionACancelada(orden, ordenId);
+            case FINALIZADA -> procesarTransicionAFinalizada(orden, ordenId);
+            case ASIGNADA -> orden.reanudar();
+        }
+    }
+
+    /**
+     * Procesa la transición al estado EN_PROCESO
+     */
+    private void procesarTransicionAEnProceso(OrdenTrabajo orden, Long ordenId) {
+        if (orden.getEstado() == EstadoOrden.PAUSADA) {
+            orden.reanudar();
+            log.info("Orden {} reanudada desde estado PAUSADA", ordenId);
+        } else if (orden.getEstado() == EstadoOrden.ASIGNADA) {
+            orden.iniciarTrabajo();
+            log.info("Orden {} iniciada desde estado ASIGNADA", ordenId);
+        }
+    }
+
+    /**
+     * Procesa la transición al estado PAUSADA
+     */
+    private void procesarTransicionAPausada(OrdenTrabajo orden, Long ordenId) {
+        orden.pausar();
+        log.info("Orden {} pausada", ordenId);
+    }
+
+    /**
+     * Procesa la transición al estado CANCELADA
+     */
+    private void procesarTransicionACancelada(OrdenTrabajo orden, Long ordenId) {
+        orden.setEstado(EstadoOrden.CANCELADA);
+        orden.setFechaFinTrabajo(LocalDateTime.now());
+        orden.setFechaActualizacion(LocalDateTime.now());
+
+        try {
+            materialService.devolverMaterialesDeOrden(ordenId);
+            log.info("Materiales devueltos exitosamente al cancelar orden {}", ordenId);
+        } catch (Exception e) {
+            log.error("Error al devolver materiales de la orden {}: {}", ordenId, e.getMessage());
+            throw new DominioExcepcion("Error al devolver materiales: " + e.getMessage());
+        }
+
+        log.info("Orden {} cancelada", ordenId);
+    }
+
+    /**
+     * Procesa la transición al estado FINALIZADA
+     */
+    private void procesarTransicionAFinalizada(OrdenTrabajo orden, Long ordenId) {
+        long cantidadEvidencias = evidenciaRepository.contarEvidenciasPorOrden(ordenId);
+        if (cantidadEvidencias == 0) {
+            throw new DominioExcepcion("Se requiere al menos un comentario o foto para finalizar la orden");
+        }
+
+        if (!EstadoOrden.estadosParaFinalizar().contains(orden.getEstado())) {
+            throw EstadoOrdenInvalidoExcepcion.paraFinalizar(orden.getEstado());
+        }
+
+        orden.setEstado(EstadoOrden.FINALIZADA);
+        orden.setFechaFinTrabajo(LocalDateTime.now());
+        orden.setFechaActualizacion(LocalDateTime.now());
+    }
+
+    /**
+     * Envía notificaciones del cambio de estado
+     */
+    private void enviarNotificacionesCambioEstado(OrdenTrabajo orden, Usuario usuario,
+                                                  EstadoOrden estadoAnterior, LocalDateTime fechaHoraCambio) {
+        try {
+            CambioEstadoOrdenDTO cambioEstado = CambioEstadoOrdenDTO.builder()
+                    .numeroOrden(orden.getNumeroOrden().getValor())
+                    .nombreTecnico(usuario.getNombreCompleto())
+                    .estadoAnterior(estadoAnterior.getDescripcion())
+                    .estadoNuevo(orden.getEstado().getDescripcion())
+                    .fechaHoraCambio(fechaHoraCambio)
+                    .clienteNombre(orden.getClienteNombre())
+                    .clienteTelefono(orden.getClienteTelefono() != null
+                            ? orden.getClienteTelefono().toString() : null)
+                    .build();
+
+            notificacionService.notificarCambioEstadoASupervisor(cambioEstado);
+            notificacionService.notificarCambioEstadoACliente(cambioEstado);
+
+            log.info("Notificaciones enviadas para orden {}", orden.getId());
+        } catch (Exception e) {
+            log.error("Error al enviar notificaciones para orden {}: {}", orden.getId(), e.getMessage());
+        }
     }
 
     @Override
@@ -231,7 +273,7 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
         }
         // Usar el metodo de actualización con estado FINALIZADA
         request.setNuevoEstado(EstadoOrden.FINALIZADA);
-        return actualizarEstadoOrden(ordenId, request, emailUsuario);
+        return self.actualizarEstadoOrden(ordenId, request, emailUsuario);
     }
 
     @Override
@@ -258,81 +300,10 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
      * Mapea una orden completa incluyendo evidencias y materiales
      */
     private OrdenTrabajoResponse mapearAResponseCompleto(OrdenTrabajo orden, String emailUsuario) {
-        TecnicoResponse tecnico = null;
-
-        if (orden.getTecnicoAsignadoId() != null) {
-            Usuario usuarioTecnico = usuarioRepository.buscarPorId(orden.getTecnicoAsignadoId())
-                    .orElse(null);
-
-            if (usuarioTecnico != null) {
-                tecnico = TecnicoResponse.builder()
-                        .id(usuarioTecnico.getId())
-                        .email(usuarioTecnico.getEmail().getValor())
-                        .nombreCompleto(usuarioTecnico.getNombreCompleto())
-                        .activo(usuarioTecnico.estaActivo())
-                        .build();
-            }
-        }
-
-        double duracionHoras = 0.0;
-        if (orden.getDuracionTrabajo().compareTo(Duration.ZERO) > 0) {
-            duracionHoras = Math.round((orden.getDuracionTrabajo().toMinutes() / 60.0) * 100.0) / 100.0;
-        }
-
-        // **CARGAR EVIDENCIAS** - Solo si el usuario tiene acceso
-        List<EvidenciaResponse> evidencias = List.of();
-        if (emailUsuario != null && puedeAccederOrden(orden.getId(), emailUsuario)) {
-            try {
-                evidencias = evidenciaService.obtenerEvidenciasPorOrden(orden.getId(), emailUsuario);
-            } catch (Exception e) {
-                log.warn("Error cargando evidencias para orden {}: {}", orden.getId(), e.getMessage());
-                evidencias = List.of();
-            }
-        } else if (emailUsuario == null) { // Es admin consultando todas las órdenes
-            try {
-                // Para admin, usar directamente el repositorio
-                evidencias = evidenciaRepository.obtenerEvidenciasPorOrden(orden.getId())
-                        .stream()
-                        .map(evidencia -> {
-                            String nombreCreador = usuarioRepository.buscarPorId(evidencia.getCreadoPor())
-                                    .map(Usuario::getNombreCompleto)
-                                    .orElse("Usuario desconocido");
-                            return mapearEvidenciaAResponse(evidencia, nombreCreador);
-                        })
-                        .toList();
-            } catch (Exception e) {
-                log.warn("Error cargando evidencias para orden {} (admin): {}", orden.getId(), e.getMessage());
-                evidencias = List.of();
-            }
-        }
-
-        // **CARGAR MATERIALES UTILIZADOS** - Solo si el usuario tiene acceso
-        List<MaterialUtilizadoResponse> materialesUtilizados = List.of();
-        double costoTotalMateriales = 0.0;
-        if (emailUsuario != null && puedeAccederOrden(orden.getId(), emailUsuario)) {
-            try {
-                materialesUtilizados = materialService.obtenerMaterialesUtilizadosPorOrden(orden.getId(), emailUsuario);
-                costoTotalMateriales = materialesUtilizados.stream()
-                        .mapToDouble(MaterialUtilizadoResponse::getCostoTotal)
-                        .sum();
-            } catch (Exception e) {
-                log.warn("Error cargando materiales para orden {}: {}", orden.getId(), e.getMessage());
-                materialesUtilizados = List.of();
-                costoTotalMateriales = 0.0;
-            }
-        } else if (emailUsuario == null) { // Es admin consultando todas las órdenes
-            try {
-                materialesUtilizados = materialService.obtenerMaterialesUtilizadosPorOrden(orden.getId(), "admin@dummy.com");
-                // Calcular costo total de materiales
-                costoTotalMateriales = materialesUtilizados.stream()
-                        .mapToDouble(MaterialUtilizadoResponse::getCostoTotal)
-                        .sum();
-            } catch (Exception e) {
-                log.warn("Error cargando materiales para orden {} (admin): {}", orden.getId(), e.getMessage());
-                materialesUtilizados = List.of();
-                costoTotalMateriales = 0.0;
-            }
-        }
+        TecnicoResponse tecnico = obtenerTecnicoResponse(orden);
+        double duracionHoras = calcularDuracionEnHoras(orden);
+        List<EvidenciaResponse> evidencias = cargarEvidencias(orden, emailUsuario);
+        DatosMateriales datosMateriales = cargarMateriales(orden, emailUsuario);
 
         return OrdenTrabajoResponse.builder()
                 .id(orden.getId())
@@ -351,11 +322,129 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
                 .fechaFinTrabajo(orden.getFechaFinTrabajo())
                 .fechaCreacion(orden.getFechaCreacion())
                 .evidencias(evidencias)
-                .materialesUtilizados(materialesUtilizados)
-                .costoTotalMateriales(costoTotalMateriales)
+                .materialesUtilizados(datosMateriales.materiales())
+                .costoTotalMateriales(datosMateriales.costoTotal())
                 .duracionTrabajoHoras(duracionHoras)
                 .estaVencida(orden.estaVencida())
                 .build();
+    }
+
+    /**
+     * Obtiene la información del técnico asignado
+     */
+    private TecnicoResponse obtenerTecnicoResponse(OrdenTrabajo orden) {
+        if (orden.getTecnicoAsignadoId() == null) {
+            return null;
+        }
+
+        return usuarioRepository.buscarPorId(orden.getTecnicoAsignadoId())
+                .map(usuarioTecnico -> TecnicoResponse.builder()
+                        .id(usuarioTecnico.getId())
+                        .email(usuarioTecnico.getEmail().getValor())
+                        .nombreCompleto(usuarioTecnico.getNombreCompleto())
+                        .activo(usuarioTecnico.estaActivo())
+                        .build())
+                .orElse(null);
+    }
+
+    /**
+     * Calcula la duración del trabajo en horas
+     */
+    private double calcularDuracionEnHoras(OrdenTrabajo orden) {
+        if (orden.getDuracionTrabajo().compareTo(Duration.ZERO) <= 0) {
+            return 0.0;
+        }
+        return Math.round((orden.getDuracionTrabajo().toMinutes() / 60.0) * 100.0) / 100.0;
+    }
+
+    /**
+     * Carga las evidencias según el tipo de usuario
+     */
+    private List<EvidenciaResponse> cargarEvidencias(OrdenTrabajo orden, String emailUsuario) {
+        if (emailUsuario != null && puedeAccederOrden(orden.getId(), emailUsuario)) {
+            return cargarEvidenciasParaUsuario(orden, emailUsuario);
+        } else if (emailUsuario == null) {
+            return cargarEvidenciasParaAdmin(orden);
+        }
+        return List.of();
+    }
+
+    /**
+     * Carga evidencias para un usuario específico
+     */
+    private List<EvidenciaResponse> cargarEvidenciasParaUsuario(OrdenTrabajo orden, String emailUsuario) {
+        try {
+            return evidenciaService.obtenerEvidenciasPorOrden(orden.getId(), emailUsuario);
+        } catch (Exception e) {
+            log.warn("Error cargando evidencias para orden {}: {}", orden.getId(), e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * Carga evidencias para administrador usando el repositorio directamente
+     */
+    private List<EvidenciaResponse> cargarEvidenciasParaAdmin(OrdenTrabajo orden) {
+        try {
+            return evidenciaRepository.obtenerEvidenciasPorOrden(orden.getId())
+                    .stream()
+                    .map(evidencia -> {
+                        String nombreCreador = usuarioRepository.buscarPorId(evidencia.getCreadoPor())
+                                .map(Usuario::getNombreCompleto)
+                                .orElse("Usuario desconocido");
+                        return mapearEvidenciaAResponse(evidencia, nombreCreador);
+                    })
+                    .toList();
+        } catch (Exception e) {
+            log.warn("Error cargando evidencias para orden {} (admin): {}", orden.getId(), e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * Carga los materiales utilizados según el tipo de usuario
+     */
+    private DatosMateriales cargarMateriales(OrdenTrabajo orden, String emailUsuario) {
+        if (emailUsuario != null && puedeAccederOrden(orden.getId(), emailUsuario)) {
+            return cargarMaterialesParaUsuario(orden, emailUsuario);
+        } else if (emailUsuario == null) {
+            return cargarMaterialesParaAdmin(orden);
+        }
+        return new DatosMateriales(List.of(), 0.0);
+    }
+
+    /**
+     * Carga materiales para un usuario específico
+     */
+    private DatosMateriales cargarMaterialesParaUsuario(OrdenTrabajo orden, String emailUsuario) {
+        try {
+            List<MaterialUtilizadoResponse> materiales =
+                    materialService.obtenerMaterialesUtilizadosPorOrden(orden.getId(), emailUsuario);
+            double costoTotal = materiales.stream()
+                    .mapToDouble(MaterialUtilizadoResponse::getCostoTotal)
+                    .sum();
+            return new DatosMateriales(materiales, costoTotal);
+        } catch (Exception e) {
+            log.warn("Error cargando materiales para orden {}: {}", orden.getId(), e.getMessage());
+            return new DatosMateriales(List.of(), 0.0);
+        }
+    }
+
+    /**
+     * Carga materiales para administrador
+     */
+    private DatosMateriales cargarMaterialesParaAdmin(OrdenTrabajo orden) {
+        try {
+            List<MaterialUtilizadoResponse> materiales =
+                    materialService.obtenerMaterialesUtilizadosPorOrden(orden.getId(), "admin@dummy.com");
+            double costoTotal = materiales.stream()
+                    .mapToDouble(MaterialUtilizadoResponse::getCostoTotal)
+                    .sum();
+            return new DatosMateriales(materiales, costoTotal);
+        } catch (Exception e) {
+            log.warn("Error cargando materiales para orden {} (admin): {}", orden.getId(), e.getMessage());
+            return new DatosMateriales(List.of(), 0.0);
+        }
     }
 
     /**
@@ -378,4 +467,9 @@ public class OrdenTrabajoService implements IOrdenTrabajoService {
                 .creadoPor(nombreCreador)
                 .build();
     }
+
+    /**
+     * Record para encapsular los datos de materiales
+     */
+    private record DatosMateriales(List<MaterialUtilizadoResponse> materiales, double costoTotal) {}
 }

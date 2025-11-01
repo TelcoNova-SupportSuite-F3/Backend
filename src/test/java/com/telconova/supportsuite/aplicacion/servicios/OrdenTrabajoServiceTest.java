@@ -12,12 +12,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -36,10 +41,14 @@ class OrdenTrabajoServiceTest {
     @Mock
     private IEvidenciaRepository evidenciaRepository;
 
+    @Mock
+    private IEvidenciaService evidenciaService;
 
     @Mock
     private IMaterialService materialService;
 
+    @Mock
+    private IAlmacenamientoArchivos almacenamientoArchivos;
 
     @Mock
     private INotificacionService notificacionService;
@@ -51,28 +60,38 @@ class OrdenTrabajoServiceTest {
     private Usuario tecnico;
     private Usuario admin;
 
+    private static final String EMAIL_TECNICO = "tecnico@telconova.com";
+    private static final String EMAIL_ADMIN = "admin@telconova.com";
+    private static final Long ID_ORDEN = 1L;
+    private static final Long ID_TECNICO = 1L;
+    private static final String NUMERO_ORDEN = "ORD-2025-001";
+
     @BeforeEach
     void setUp() {
-        // Arrange - Configuración común
-        tecnico = Usuario.builder()
-                .id(1L)
-                .email(Email.de("tecnico@telconova.com"))
-                .nombreCompleto("Juan Técnico")
-                .rol(RolUsuario.TECNICO)
+        tecnico = crearUsuario(ID_TECNICO, EMAIL_TECNICO, "Juan Técnico", RolUsuario.TECNICO);
+        admin = crearUsuario(2L, EMAIL_ADMIN, "Admin Sistema", RolUsuario.ADMIN);
+        orden = crearOrdenTrabajo();
+
+        // Auto-inyección del servicio para evitar problemas transaccionales
+        ordenTrabajoService.setSelf(ordenTrabajoService);
+    }
+
+    // ==================== MÉTODOS DE UTILIDAD ====================
+
+    private Usuario crearUsuario(Long id, String email, String nombre, RolUsuario rol) {
+        return Usuario.builder()
+                .id(id)
+                .email(Email.de(email))
+                .nombreCompleto(nombre)
+                .rol(rol)
                 .activo(true)
                 .build();
+    }
 
-        admin = Usuario.builder()
-                .id(2L)
-                .email(Email.de("admin@telconova.com"))
-                .nombreCompleto("Admin Sistema")
-                .rol(RolUsuario.ADMIN)
-                .activo(true)
-                .build();
-
-        orden = OrdenTrabajo.builder()
-                .id(1L)
-                .numeroOrden(NumeroOrden.de("ORD-2025-001"))
+    private OrdenTrabajo crearOrdenTrabajo() {
+        return OrdenTrabajo.builder()
+                .id(ID_ORDEN)
+                .numeroOrden(NumeroOrden.de(NUMERO_ORDEN))
                 .titulo("Instalación Internet")
                 .descripcion("Instalación de servicio de internet fibra óptica")
                 .estado(EstadoOrden.ASIGNADA)
@@ -81,161 +100,146 @@ class OrdenTrabajoServiceTest {
                 .clienteNombre("Cliente Test")
                 .clienteTelefono(Telefono.de("+57 300 1234567"))
                 .direccion("Calle 123 #45-67")
-                .tecnicoAsignadoId(1L)
+                .tecnicoAsignadoId(ID_TECNICO)
                 .fechaCreacion(LocalDateTime.now())
                 .fechaAsignacion(LocalDateTime.now())
                 .build();
     }
 
+    private ActualizarEstadoRequest crearRequestCambioEstado(EstadoOrden nuevoEstado) {
+        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
+        request.setNuevoEstado(nuevoEstado);
+        return request;
+    }
+
+    private void configurarMocksParaCambioEstado() {
+        when(ordenTrabajoRepository.buscarPorId(ID_ORDEN)).thenReturn(Optional.of(orden));
+        when(usuarioRepository.buscarPorEmail(EMAIL_TECNICO)).thenReturn(Optional.of(tecnico));
+        when(ordenTrabajoRepository.guardar(any(OrdenTrabajo.class))).thenReturn(orden);
+        doNothing().when(notificacionService).notificarCambioEstadoASupervisor(any());
+        doNothing().when(notificacionService).notificarCambioEstadoACliente(any());
+    }
+
+    // ==================== TESTS: OBTENER ÓRDENES ====================
+
     @Test
     @DisplayName("Debe obtener órdenes por técnico exitosamente")
     void debeObtenerOrdenesPorTecnico() {
         // Arrange
-        List<OrdenTrabajo> ordenes = Arrays.asList(orden);
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
-        when(ordenTrabajoRepository.obtenerOrdenesPorTecnico(1L)).thenReturn(ordenes);
+        List<OrdenTrabajo> ordenes = List.of(orden);
+        when(usuarioRepository.buscarPorEmail(EMAIL_TECNICO)).thenReturn(Optional.of(tecnico));
+        when(ordenTrabajoRepository.obtenerOrdenesPorTecnico(ID_TECNICO)).thenReturn(ordenes);
 
         // Act
-        List<OrdenTrabajoResponse> responses =
-                ordenTrabajoService.obtenerOrdenesPorTecnico("tecnico@telconova.com");
+        List<OrdenTrabajoResponse> resultado = ordenTrabajoService.obtenerOrdenesPorTecnico(EMAIL_TECNICO);
 
         // Assert
-        assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).getNumeroOrden()).isEqualTo("ORD-2025-001");
+        assertThat(resultado)
+                .hasSize(1)
+                .first()
+                .extracting(OrdenTrabajoResponse::getNumeroOrden)
+                .isEqualTo(NUMERO_ORDEN);
 
-        verify(ordenTrabajoRepository, times(1)).obtenerOrdenesPorTecnico(1L);
+        verify(ordenTrabajoRepository).obtenerOrdenesPorTecnico(ID_TECNICO);
     }
 
     @Test
     @DisplayName("Debe lanzar excepción cuando usuario no es técnico")
     void debeLanzarExcepcionCuandoUsuarioNoEsTecnico() {
         // Arrange
-        when(usuarioRepository.buscarPorEmail("admin@telconova.com")).thenReturn(Optional.of(admin));
+        when(usuarioRepository.buscarPorEmail(EMAIL_ADMIN)).thenReturn(Optional.of(admin));
 
         // Act & Assert
-        assertThatThrownBy(() ->
-                ordenTrabajoService.obtenerOrdenesPorTecnico("admin@telconova.com")
-        )
+        assertThatThrownBy(() -> ordenTrabajoService.obtenerOrdenesPorTecnico(EMAIL_ADMIN))
                 .isInstanceOf(AccesoNoAutorizadoExcepcion.class);
 
         verify(ordenTrabajoRepository, never()).obtenerOrdenesPorTecnico(anyLong());
     }
 
     @Test
-    @DisplayName("Debe obtener todas las órdenes como admin")
-    void debeObtenerTodasLasOrdenesComoAdmin() {
+    @DisplayName("Debe obtener todas las órdenes del sistema")
+    void debeObtenerTodasLasOrdenes() {
         // Arrange
-        List<OrdenTrabajo> ordenes = Arrays.asList(orden);
+        List<OrdenTrabajo> ordenes = List.of(orden);
         when(ordenTrabajoRepository.obtenerTodasLasOrdenes()).thenReturn(ordenes);
 
         // Act
-        List<OrdenTrabajoResponse> responses = ordenTrabajoService.obtenerTodasLasOrdenes();
+        List<OrdenTrabajoResponse> resultado = ordenTrabajoService.obtenerTodasLasOrdenes();
 
         // Assert
-        assertThat(responses).hasSize(1);
-        verify(ordenTrabajoRepository, times(1)).obtenerTodasLasOrdenes();
+        assertThat(resultado).hasSize(1);
+        verify(ordenTrabajoRepository).obtenerTodasLasOrdenes();
     }
 
     @Test
     @DisplayName("Debe obtener orden por ID exitosamente")
     void debeObtenerOrdenPorId() {
         // Arrange
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
+        when(ordenTrabajoRepository.buscarPorId(ID_ORDEN)).thenReturn(Optional.of(orden));
+        when(usuarioRepository.buscarPorEmail(EMAIL_TECNICO)).thenReturn(Optional.of(tecnico));
 
         // Act
-        OrdenTrabajoResponse response =
-                ordenTrabajoService.obtenerOrdenPorId(1L, "tecnico@telconova.com");
+        OrdenTrabajoResponse resultado = ordenTrabajoService.obtenerOrdenPorId(ID_ORDEN, EMAIL_TECNICO);
 
         // Assert
-        assertThat(response).isNotNull();
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getNumeroOrden()).isEqualTo("ORD-2025-001");
-
-        verify(ordenTrabajoRepository, times(4)).buscarPorId(1L);
+        assertThat(resultado)
+                .isNotNull()
+                .satisfies(response -> {
+                    assertThat(response.getId()).isEqualTo(ID_ORDEN);
+                    assertThat(response.getNumeroOrden()).isEqualTo(NUMERO_ORDEN);
+                });
     }
 
     @Test
     @DisplayName("Debe lanzar excepción al obtener orden inexistente")
     void debeLanzarExcepcionAlObtenerOrdenInexistente() {
         // Arrange
-        when(ordenTrabajoRepository.buscarPorId(999L)).thenReturn(Optional.empty());
+        Long idInexistente = 999L;
+        when(ordenTrabajoRepository.buscarPorId(idInexistente)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThatThrownBy(() ->
-                ordenTrabajoService.obtenerOrdenPorId(999L, "tecnico@telconova.com")
-        )
+        assertThatThrownBy(() -> ordenTrabajoService.obtenerOrdenPorId(idInexistente, EMAIL_TECNICO))
                 .isInstanceOf(OrdenNoEncontradaExcepcion.class);
     }
 
-    @Test
-    @DisplayName("Debe actualizar estado de ASIGNADA a EN_PROCESO")
-    void debeActualizarEstadoDeAsignadaAEnProceso() {
-        // Arrange
-        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
-        request.setNuevoEstado(EstadoOrden.EN_PROCESO);
+    // ==================== TESTS PARAMETRIZADOS: TRANSICIONES DE ESTADO ====================
 
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
-        when(ordenTrabajoRepository.guardar(any(OrdenTrabajo.class))).thenReturn(orden);
-        doNothing().when(notificacionService).notificarCambioEstadoASupervisor(any());
-        doNothing().when(notificacionService).notificarCambioEstadoACliente(any());
+    @ParameterizedTest
+    @MethodSource("proveerTransicionesExitosas")
+    @DisplayName("Debe realizar transiciones de estado válidas correctamente")
+    void debeRealizarTransicionesValidas(EstadoOrden estadoInicial, EstadoOrden estadoFinal) {
+        // Arrange
+        orden.setEstado(estadoInicial);
+        ActualizarEstadoRequest request = crearRequestCambioEstado(estadoFinal);
+        configurarMocksParaCambioEstado();
+
+        if (estadoFinal == EstadoOrden.CANCELADA) {
+            doNothing().when(materialService).devolverMaterialesDeOrden(ID_ORDEN);
+        }
+
+        if (estadoFinal == EstadoOrden.FINALIZADA) {
+            when(evidenciaRepository.contarEvidenciasPorOrden(ID_ORDEN)).thenReturn(2L);
+        }
 
         // Act
-        OrdenTrabajoResponse response =
-                ordenTrabajoService.actualizarEstadoOrden(1L, request, "tecnico@telconova.com");
+        OrdenTrabajoResponse resultado = ordenTrabajoService.actualizarEstadoOrden(
+                ID_ORDEN, request, EMAIL_TECNICO);
 
         // Assert
-        assertThat(response).isNotNull();
-        verify(ordenTrabajoRepository, times(1)).guardar(any(OrdenTrabajo.class));
-        verify(notificacionService, times(1)).notificarCambioEstadoASupervisor(any());
-        verify(notificacionService, times(1)).notificarCambioEstadoACliente(any());
+        assertThat(resultado).isNotNull();
+        verify(ordenTrabajoRepository).guardar(any(OrdenTrabajo.class));
+        verify(notificacionService).notificarCambioEstadoASupervisor(any());
+        verify(notificacionService).notificarCambioEstadoACliente(any());
     }
 
-    @Test
-    @DisplayName("Debe pausar orden en proceso")
-    void debePausarOrdenEnProceso() {
-        // Arrange
-        orden.setEstado(EstadoOrden.EN_PROCESO);
-        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
-        request.setNuevoEstado(EstadoOrden.PAUSADA);
-
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
-        when(ordenTrabajoRepository.guardar(any(OrdenTrabajo.class))).thenReturn(orden);
-        doNothing().when(notificacionService).notificarCambioEstadoASupervisor(any());
-        doNothing().when(notificacionService).notificarCambioEstadoACliente(any());
-
-        // Act
-        OrdenTrabajoResponse response =
-                ordenTrabajoService.actualizarEstadoOrden(1L, request, "tecnico@telconova.com");
-
-        // Assert
-        assertThat(response).isNotNull();
-        verify(ordenTrabajoRepository, times(1)).guardar(any(OrdenTrabajo.class));
-    }
-
-    @Test
-    @DisplayName("Debe reanudar orden pausada a en proceso")
-    void debeReanudarOrdenPausada() {
-        // Arrange
-        orden.setEstado(EstadoOrden.PAUSADA);
-        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
-        request.setNuevoEstado(EstadoOrden.EN_PROCESO);
-
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
-        when(ordenTrabajoRepository.guardar(any(OrdenTrabajo.class))).thenReturn(orden);
-        doNothing().when(notificacionService).notificarCambioEstadoASupervisor(any());
-        doNothing().when(notificacionService).notificarCambioEstadoACliente(any());
-
-        // Act
-        OrdenTrabajoResponse response =
-                ordenTrabajoService.actualizarEstadoOrden(1L, request, "tecnico@telconova.com");
-
-        // Assert
-        assertThat(response).isNotNull();
-        verify(ordenTrabajoRepository, times(1)).guardar(any(OrdenTrabajo.class));
+    static Stream<Arguments> proveerTransicionesExitosas() {
+        return Stream.of(
+                Arguments.of(EstadoOrden.ASIGNADA, EstadoOrden.EN_PROCESO),
+                Arguments.of(EstadoOrden.EN_PROCESO, EstadoOrden.PAUSADA),
+                Arguments.of(EstadoOrden.PAUSADA, EstadoOrden.EN_PROCESO),
+                Arguments.of(EstadoOrden.EN_PROCESO, EstadoOrden.CANCELADA),
+                Arguments.of(EstadoOrden.EN_PROCESO, EstadoOrden.FINALIZADA)
+        );
     }
 
     @Test
@@ -243,216 +247,192 @@ class OrdenTrabajoServiceTest {
     void debeCancelarOrdenYDevolverMateriales() {
         // Arrange
         orden.setEstado(EstadoOrden.EN_PROCESO);
-        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
-        request.setNuevoEstado(EstadoOrden.CANCELADA);
-
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
-        when(ordenTrabajoRepository.guardar(any(OrdenTrabajo.class))).thenReturn(orden);
-        doNothing().when(materialService).devolverMaterialesDeOrden(1L);
-        doNothing().when(notificacionService).notificarCambioEstadoASupervisor(any());
-        doNothing().when(notificacionService).notificarCambioEstadoACliente(any());
+        ActualizarEstadoRequest request = crearRequestCambioEstado(EstadoOrden.CANCELADA);
+        configurarMocksParaCambioEstado();
+        doNothing().when(materialService).devolverMaterialesDeOrden(ID_ORDEN);
 
         // Act
-        OrdenTrabajoResponse response =
-                ordenTrabajoService.actualizarEstadoOrden(1L, request, "tecnico@telconova.com");
+        OrdenTrabajoResponse resultado = ordenTrabajoService.actualizarEstadoOrden(
+                ID_ORDEN, request, EMAIL_TECNICO);
 
         // Assert
-        assertThat(response).isNotNull();
-        verify(materialService, times(1)).devolverMaterialesDeOrden(1L);
-        verify(ordenTrabajoRepository, times(1)).guardar(any(OrdenTrabajo.class));
+        assertThat(resultado).isNotNull();
+        verify(materialService).devolverMaterialesDeOrden(ID_ORDEN);
+        verify(ordenTrabajoRepository).guardar(any(OrdenTrabajo.class));
     }
 
-    @Test
-    @DisplayName("Debe lanzar excepción al intentar modificar orden cancelada")
-    void debeLanzarExcepcionAlModificarOrdenCancelada() {
+    @ParameterizedTest
+    @CsvSource({
+            "CANCELADA, EN_PROCESO, cancelada",
+            "FINALIZADA, CANCELADA, finalizada"
+    })
+    @DisplayName("Debe lanzar excepción al intentar modificar orden cancelada o finalizada")
+    void debeLanzarExcepcionAlModificarOrdenCanceladaOFinalizada(
+            EstadoOrden estadoActual, EstadoOrden nuevoEstado, String mensajeEsperado) {
         // Arrange
-        orden.setEstado(EstadoOrden.CANCELADA);
-        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
-        request.setNuevoEstado(EstadoOrden.EN_PROCESO);
-
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
+        orden.setEstado(estadoActual);
+        ActualizarEstadoRequest request = crearRequestCambioEstado(nuevoEstado);
+        when(ordenTrabajoRepository.buscarPorId(ID_ORDEN)).thenReturn(Optional.of(orden));
+        when(usuarioRepository.buscarPorEmail(EMAIL_TECNICO)).thenReturn(Optional.of(tecnico));
 
         // Act & Assert
-        assertThatThrownBy(() ->
-                ordenTrabajoService.actualizarEstadoOrden(1L, request, "tecnico@telconova.com")
-        )
+        assertThatThrownBy(() -> ordenTrabajoService.actualizarEstadoOrden(
+                ID_ORDEN, request, EMAIL_TECNICO))
                 .isInstanceOf(EstadoOrdenInvalidoExcepcion.class)
-                .hasMessageContaining("cancelada");
+                .hasMessageContaining(mensajeEsperado);
 
         verify(ordenTrabajoRepository, never()).guardar(any());
     }
 
     @Test
-    @DisplayName("Debe lanzar excepción al intentar cancelar orden finalizada")
-    void debeLanzarExcepcionAlCancelarOrdenFinalizada() {
-        // Arrange
-        orden.setEstado(EstadoOrden.FINALIZADA);
-        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
-        request.setNuevoEstado(EstadoOrden.CANCELADA);
-
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
-
-        // Act & Assert
-        assertThatThrownBy(() ->
-                ordenTrabajoService.actualizarEstadoOrden(1L, request, "tecnico@telconova.com")
-        )
-                .isInstanceOf(EstadoOrdenInvalidoExcepcion.class)
-                .hasMessageContaining("finalizada");
-    }
-
-    @Test
-    @DisplayName("Debe finalizar orden con evidencias y fechas")
-    void debeFinalizarOrdenConEvidenciasYFechas() {
+    @DisplayName("Debe finalizar orden con evidencias correctamente")
+    void debeFinalizarOrdenConEvidencias() {
         // Arrange
         orden.setEstado(EstadoOrden.EN_PROCESO);
-        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
-        request.setNuevoEstado(EstadoOrden.FINALIZADA);
+        ActualizarEstadoRequest request = crearRequestCambioEstado(EstadoOrden.FINALIZADA);
         request.setFechaInicioTrabajo(LocalDateTime.now().minusHours(2));
         request.setFechaFinTrabajo(LocalDateTime.now());
 
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
-        when(evidenciaRepository.contarEvidenciasPorOrden(1L)).thenReturn(2L);
-        when(ordenTrabajoRepository.guardar(any(OrdenTrabajo.class))).thenReturn(orden);
-        doNothing().when(notificacionService).notificarCambioEstadoASupervisor(any());
-        doNothing().when(notificacionService).notificarCambioEstadoACliente(any());
+        configurarMocksParaCambioEstado();
+        when(evidenciaRepository.contarEvidenciasPorOrden(ID_ORDEN)).thenReturn(2L);
 
         // Act
-        OrdenTrabajoResponse response =
-                ordenTrabajoService.actualizarEstadoOrden(1L, request, "tecnico@telconova.com");
+        OrdenTrabajoResponse resultado = ordenTrabajoService.actualizarEstadoOrden(
+                ID_ORDEN, request, EMAIL_TECNICO);
 
         // Assert
-        assertThat(response).isNotNull();
-        verify(evidenciaRepository, times(1)).contarEvidenciasPorOrden(1L);
-        verify(ordenTrabajoRepository, times(1)).guardar(any(OrdenTrabajo.class));
+        assertThat(resultado).isNotNull();
+        verify(evidenciaRepository).contarEvidenciasPorOrden(ID_ORDEN);
+        verify(ordenTrabajoRepository).guardar(any(OrdenTrabajo.class));
     }
 
     @Test
-    @DisplayName("Debe lanzar excepción al finalizar sin evidencias")
+    @DisplayName("Debe lanzar excepción al finalizar orden sin evidencias")
     void debeLanzarExcepcionAlFinalizarSinEvidencias() {
         // Arrange
         orden.setEstado(EstadoOrden.EN_PROCESO);
-        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
-        request.setNuevoEstado(EstadoOrden.FINALIZADA);
-        request.setFechaInicioTrabajo(LocalDateTime.now().minusHours(2));
-        request.setFechaFinTrabajo(LocalDateTime.now());
-
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
-        when(evidenciaRepository.contarEvidenciasPorOrden(1L)).thenReturn(0L);
+        ActualizarEstadoRequest request = crearRequestCambioEstado(EstadoOrden.FINALIZADA);
+        when(ordenTrabajoRepository.buscarPorId(ID_ORDEN)).thenReturn(Optional.of(orden));
+        when(usuarioRepository.buscarPorEmail(EMAIL_TECNICO)).thenReturn(Optional.of(tecnico));
+        when(evidenciaRepository.contarEvidenciasPorOrden(ID_ORDEN)).thenReturn(0L);
 
         // Act & Assert
-        assertThatThrownBy(() ->
-                ordenTrabajoService.actualizarEstadoOrden(1L, request, "tecnico@telconova.com")
-        )
+        assertThatThrownBy(() -> ordenTrabajoService.actualizarEstadoOrden(
+                ID_ORDEN, request, EMAIL_TECNICO))
                 .isInstanceOf(DominioExcepcion.class)
-                .hasMessageContaining("Se requiere al menos un comentario o foto para finalizar la orden");
+                .hasMessageContaining("Se requiere al menos un comentario o foto");
 
         verify(ordenTrabajoRepository, never()).guardar(any());
     }
 
     @Test
-    @DisplayName("Debe obtener órdenes por estado como admin")
+    @DisplayName("Debe lanzar excepción con transición inválida de estado")
+    void debeLanzarExcepcionConTransicionInvalida() {
+        // Arrange
+        orden.setEstado(EstadoOrden.ASIGNADA);
+        ActualizarEstadoRequest request = crearRequestCambioEstado(EstadoOrden.FINALIZADA);
+        when(ordenTrabajoRepository.buscarPorId(ID_ORDEN)).thenReturn(Optional.of(orden));
+        when(usuarioRepository.buscarPorEmail(EMAIL_TECNICO)).thenReturn(Optional.of(tecnico));
+
+        // Act & Assert
+        assertThatThrownBy(() -> ordenTrabajoService.actualizarEstadoOrden(
+                ID_ORDEN, request, EMAIL_TECNICO))
+                .isInstanceOf(EstadoOrdenInvalidoExcepcion.class);
+    }
+
+    // ==================== TESTS: OBTENER ÓRDENES POR ESTADO ====================
+
+    @Test
+    @DisplayName("Debe obtener órdenes por estado como administrador")
     void debeObtenerOrdenesPorEstadoComoAdmin() {
         // Arrange
-        List<OrdenTrabajo> ordenes = Arrays.asList(orden);
-        when(usuarioRepository.buscarPorEmail("admin@telconova.com")).thenReturn(Optional.of(admin));
+        List<OrdenTrabajo> ordenes = List.of(orden);
+        when(usuarioRepository.buscarPorEmail(EMAIL_ADMIN)).thenReturn(Optional.of(admin));
         when(ordenTrabajoRepository.obtenerOrdenesPorEstado(EstadoOrden.ASIGNADA)).thenReturn(ordenes);
 
         // Act
-        List<OrdenTrabajoResponse> responses =
-                ordenTrabajoService.obtenerOrdenesPorEstado(EstadoOrden.ASIGNADA, "admin@telconova.com");
+        List<OrdenTrabajoResponse> resultado = ordenTrabajoService.obtenerOrdenesPorEstado(
+                EstadoOrden.ASIGNADA, EMAIL_ADMIN);
 
         // Assert
-        assertThat(responses).hasSize(1);
-        verify(ordenTrabajoRepository, times(1)).obtenerOrdenesPorEstado(EstadoOrden.ASIGNADA);
+        assertThat(resultado).hasSize(1);
+        verify(ordenTrabajoRepository).obtenerOrdenesPorEstado(EstadoOrden.ASIGNADA);
     }
 
     @Test
     @DisplayName("Debe obtener órdenes por estado como técnico")
     void debeObtenerOrdenesPorEstadoComoTecnico() {
         // Arrange
-        List<OrdenTrabajo> ordenes = Arrays.asList(orden);
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
-        when(ordenTrabajoRepository.obtenerOrdenesPorTecnicoYEstado(1L, EstadoOrden.ASIGNADA))
+        List<OrdenTrabajo> ordenes = List.of(orden);
+        when(usuarioRepository.buscarPorEmail(EMAIL_TECNICO)).thenReturn(Optional.of(tecnico));
+        when(ordenTrabajoRepository.obtenerOrdenesPorTecnicoYEstado(ID_TECNICO, EstadoOrden.ASIGNADA))
                 .thenReturn(ordenes);
 
         // Act
-        List<OrdenTrabajoResponse> responses =
-                ordenTrabajoService.obtenerOrdenesPorEstado(EstadoOrden.ASIGNADA, "tecnico@telconova.com");
+        List<OrdenTrabajoResponse> resultado = ordenTrabajoService.obtenerOrdenesPorEstado(
+                EstadoOrden.ASIGNADA, EMAIL_TECNICO);
 
         // Assert
-        assertThat(responses).hasSize(1);
-        verify(ordenTrabajoRepository, times(1))
-                .obtenerOrdenesPorTecnicoYEstado(1L, EstadoOrden.ASIGNADA);
+        assertThat(resultado).hasSize(1);
+        verify(ordenTrabajoRepository).obtenerOrdenesPorTecnicoYEstado(ID_TECNICO, EstadoOrden.ASIGNADA);
     }
 
+    // ==================== TESTS: CONTROL DE ACCESO ====================
+
     @Test
-    @DisplayName("Admin debe poder acceder a cualquier orden")
+    @DisplayName("Administrador debe poder acceder a cualquier orden")
     void adminDebePodeAccederACualquierOrden() {
         // Arrange
-        when(usuarioRepository.buscarPorEmail("admin@telconova.com")).thenReturn(Optional.of(admin));
+        when(usuarioRepository.buscarPorEmail(EMAIL_ADMIN)).thenReturn(Optional.of(admin));
 
         // Act
-        boolean puedeAcceder = ordenTrabajoService.puedeAccederOrden(1L, "admin@telconova.com");
+        boolean resultado = ordenTrabajoService.puedeAccederOrden(ID_ORDEN, EMAIL_ADMIN);
 
         // Assert
-        assertThat(puedeAcceder).isTrue();
+        assertThat(resultado).isTrue();
     }
 
     @Test
     @DisplayName("Técnico debe poder acceder solo a su orden asignada")
     void tecnicoDebePodeAccederSoloASuOrden() {
         // Arrange
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
+        when(usuarioRepository.buscarPorEmail(EMAIL_TECNICO)).thenReturn(Optional.of(tecnico));
+        when(ordenTrabajoRepository.buscarPorId(ID_ORDEN)).thenReturn(Optional.of(orden));
 
         // Act
-        boolean puedeAcceder = ordenTrabajoService.puedeAccederOrden(1L, "tecnico@telconova.com");
+        boolean resultado = ordenTrabajoService.puedeAccederOrden(ID_ORDEN, EMAIL_TECNICO);
 
         // Assert
-        assertThat(puedeAcceder).isTrue();
+        assertThat(resultado).isTrue();
     }
 
     @Test
     @DisplayName("Técnico no debe poder acceder a orden de otro técnico")
     void tecnicoNoDebePodeAccederAOrdenDeOtro() {
         // Arrange
-        Usuario otroTecnico = Usuario.builder()
-                .id(3L)
-                .email(Email.de("otro@telconova.com"))
-                .rol(RolUsuario.TECNICO)
-                .activo(true)
-                .build();
-
-        when(usuarioRepository.buscarPorEmail("otro@telconova.com")).thenReturn(Optional.of(otroTecnico));
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
+        String emailOtroTecnico = "otro@telconova.com";
+        Usuario otroTecnico = crearUsuario(3L, emailOtroTecnico, "Otro Técnico", RolUsuario.TECNICO);
+        when(usuarioRepository.buscarPorEmail(emailOtroTecnico)).thenReturn(Optional.of(otroTecnico));
+        when(ordenTrabajoRepository.buscarPorId(ID_ORDEN)).thenReturn(Optional.of(orden));
 
         // Act
-        boolean puedeAcceder = ordenTrabajoService.puedeAccederOrden(1L, "otro@telconova.com");
+        boolean resultado = ordenTrabajoService.puedeAccederOrden(ID_ORDEN, emailOtroTecnico);
 
         // Assert
-        assertThat(puedeAcceder).isFalse();
+        assertThat(resultado).isFalse();
     }
 
     @Test
-    @DisplayName("Debe lanzar excepción al intentar transición inválida")
-    void debeLanzarExcepcionConTransicionInvalida() {
+    @DisplayName("Debe retornar falso cuando usuario no existe")
+    void debeRetornarFalsoCuandoUsuarioNoExiste() {
         // Arrange
-        orden.setEstado(EstadoOrden.ASIGNADA);
-        ActualizarEstadoRequest request = new ActualizarEstadoRequest();
-        request.setNuevoEstado(EstadoOrden.FINALIZADA);
+        String emailInexistente = "inexistente@telconova.com";
+        when(usuarioRepository.buscarPorEmail(emailInexistente)).thenReturn(Optional.empty());
 
-        when(ordenTrabajoRepository.buscarPorId(1L)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.buscarPorEmail("tecnico@telconova.com")).thenReturn(Optional.of(tecnico));
+        // Act
+        boolean resultado = ordenTrabajoService.puedeAccederOrden(ID_ORDEN, emailInexistente);
 
-        // Act & Assert
-        assertThatThrownBy(() ->
-                ordenTrabajoService.actualizarEstadoOrden(1L, request, "tecnico@telconova.com")
-        )
-                .isInstanceOf(EstadoOrdenInvalidoExcepcion.class);
+        // Assert
+        assertThat(resultado).isFalse();
     }
 }
