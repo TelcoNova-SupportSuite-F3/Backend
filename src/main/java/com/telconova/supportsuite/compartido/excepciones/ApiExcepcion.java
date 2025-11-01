@@ -9,10 +9,10 @@ import org.springframework.http.HttpStatus;
  */
 @Getter
 public class ApiExcepcion extends RuntimeException {
-
+    private static final long serialVersionUID = 1L;
     private final HttpStatus estado;
     private final String codigo;
-    private final Object detalles;
+    private final transient Object detalles;
 
     public ApiExcepcion(String mensaje, HttpStatus estado) {
         super(mensaje);

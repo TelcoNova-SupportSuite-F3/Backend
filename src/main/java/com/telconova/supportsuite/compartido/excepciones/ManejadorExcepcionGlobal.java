@@ -1,7 +1,9 @@
 package com.telconova.supportsuite.compartido.excepciones;
 
-import com.telconova.supportsuite.dominio.excepciones.*;
 import com.telconova.supportsuite.compartido.constantes.MensajesConstantes;
+import com.telconova.supportsuite.dominio.excepciones.*;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +20,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Manejador global de excepciones para la aplicación
@@ -227,7 +226,7 @@ public class ManejadorExcepcionGlobal {
                 .getFieldErrors()
                 .stream()
                 .map(this::convertirFieldError)
-                .collect(Collectors.toList());
+                .toList();
 
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
@@ -248,9 +247,10 @@ public class ManejadorExcepcionGlobal {
         log.warn("Violación de constraints: {}", ex.getMessage());
 
         List<ErrorResponse.ErrorCampo> erroresCampos = ex.getConstraintViolations()
+
                 .stream()
                 .map(this::convertirConstraintViolation)
-                .collect(Collectors.toList());
+                .toList();
 
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())

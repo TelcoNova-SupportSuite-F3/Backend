@@ -43,11 +43,16 @@ class ConfiguracionConstantesTest {
     @Test
     @DisplayName("Debe tener constantes de tiempo configuradas")
     void debeTenerConstantesTiempoConfiguradas() {
+
+        // Arrange
+        long expiracionEsperada = 24L * 60 * 60 * 1000;
+        int diasLimiteEsperados = 7;
+
         // Assert
         assertThat(ConfiguracionConstantes.EXPIRACION_TOKEN_MILLIS)
-                .isEqualTo(24L * 60 * 60 * 1000);
+                .isEqualTo(expiracionEsperada);
         assertThat(ConfiguracionConstantes.DIAS_LIMITE_ORDEN_VENCIDA)
-                .isEqualTo(7);
+                .isEqualTo(diasLimiteEsperados);
     }
 
     @Test

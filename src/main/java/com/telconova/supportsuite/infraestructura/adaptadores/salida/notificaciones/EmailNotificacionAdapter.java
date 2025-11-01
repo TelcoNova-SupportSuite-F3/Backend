@@ -1,6 +1,7 @@
 package com.telconova.supportsuite.infraestructura.adaptadores.salida.notificaciones;
 
 import com.telconova.supportsuite.aplicacion.puertos.salida.INotificacionStrategy;
+import com.telconova.supportsuite.dominio.excepciones.EnvioEmailExcepcion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,7 +40,7 @@ public class EmailNotificacionAdapter implements INotificacionStrategy {
             log.info("Email enviado exitosamente a: {}", destinatario);
         } catch (Exception e) {
             log.error("Error al enviar email a {}: {}", destinatario, e.getMessage(), e);
-            throw new RuntimeException("Error al enviar email: " + e.getMessage());
+            throw new EnvioEmailExcepcion("Error al enviar email: " + e.getMessage());
         }
     }
 
