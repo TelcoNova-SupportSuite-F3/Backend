@@ -49,10 +49,10 @@ class ConfiguracionConstantesTest {
         int diasLimiteEsperados = 7;
 
         // Assert
-        assertThat(ConfiguracionConstantes.EXPIRACION_TOKEN_MILLIS)
-                .isEqualTo(expiracionEsperada);
-        assertThat(ConfiguracionConstantes.DIAS_LIMITE_ORDEN_VENCIDA)
-                .isEqualTo(diasLimiteEsperados);
+        assertThat(expiracionEsperada)
+                .isEqualTo(ConfiguracionConstantes.EXPIRACION_TOKEN_MILLIS);
+        assertThat(diasLimiteEsperados)
+                .isEqualTo(ConfiguracionConstantes.DIAS_LIMITE_ORDEN_VENCIDA);
     }
 
     @Test
