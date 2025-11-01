@@ -42,13 +42,7 @@ class OrdenTrabajoServiceTest {
     private IEvidenciaRepository evidenciaRepository;
 
     @Mock
-    private IEvidenciaService evidenciaService;
-
-    @Mock
     private IMaterialService materialService;
-
-    @Mock
-    private IAlmacenamientoArchivos almacenamientoArchivos;
 
     @Mock
     private INotificacionService notificacionService;
