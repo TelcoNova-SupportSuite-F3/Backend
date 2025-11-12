@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -21,6 +22,7 @@ public class NotificacionService implements INotificacionService {
 
     private final INotificacionStrategy emailStrategy;
     private final INotificacionStrategy whatsappStrategy;
+    private static final String DATE_TIME_FORMAT = "dd/MM/yyyy HH:mm:ss";
 
     @Value("${app.notificaciones.supervisor-email}")
     private String supervisorEmail;
@@ -75,8 +77,75 @@ public class NotificacionService implements INotificacionService {
         }
     }
 
+    @Override
+    @Async
+    public void enviarNotificacionAccesoNoAutorizado(
+            String ipAddress,
+            String urlSolicitada,
+            String metodoHttp,
+            String userAgent,
+            String motivoRechazo,
+            LocalDateTime timestamp) {
+
+        try {
+            String asunto = "🚨 ALERTA: Intento de acceso no autorizado - Telconova Support Suite";
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT);
+            String fechaFormateada = timestamp.format(formatter);
+
+            String mensaje = String.format("""
+                ⚠️ ALERTA DE SEGURIDAD - ACCESO NO AUTORIZADO
+                
+                Se ha detectado un intento de acceso no autorizado al sistema Telconova Support Suite.
+                
+                📍 DETALLES DEL INTENTO:
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                📅 Fecha y hora: %s
+                🌐 Dirección IP: %s
+                🔗 URL solicitada: %s
+                📡 Método HTTP: %s
+                🚫 Motivo de rechazo: %s
+                💻 User Agent: %s
+                
+                🔒 ACCIÓN TOMADA:
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                El acceso fue denegado automáticamente (401 Unauthorized).
+                No se permitió el acceso al recurso protegido.
+                
+                ⚡ ACCIONES RECOMENDADAS:
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                • Revisar los logs del sistema para más detalles
+                • Verificar si la IP es conocida o sospechosa
+                • Si hay múltiples intentos, considerar bloquear la IP
+                • Verificar patrones de ataque en el firewall
+                
+                📊 INFORMACIÓN TÉCNICA:
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                Sistema: Telconova Support Suite
+                Módulo: Autenticación y Seguridad
+                Código de error: TOKEN_REQUERIDO
+                
+                ---
+                Este es un mensaje automático del sistema de seguridad.
+                No responder a este correo.
+                """,
+                    fechaFormateada, ipAddress, urlSolicitada, metodoHttp,
+                    motivoRechazo, userAgent != null ? userAgent : "No disponible"
+            );
+
+                emailStrategy.enviar(supervisorEmail, asunto, mensaje);
+                log.info("✅ Notificación de seguridad enviada al admin: {}", supervisorEmail);
+
+
+
+
+        } catch (Exception e) {
+            log.error("Error al enviar notificación de acceso no autorizado: {}", e.getMessage(), e);
+        }
+    }
+
     private String construirMensajeSupervisor(CambioEstadoOrdenDTO cambioEstado) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT);
 
         return String.format("""
                 ═══════════════════════════════════════
@@ -101,7 +170,7 @@ public class NotificacionService implements INotificacionService {
     }
 
     private String construirMensajeCliente(CambioEstadoOrdenDTO cambioEstado) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT);
 
         return String.format("""
                 Hola %s,

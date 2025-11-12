@@ -181,27 +181,7 @@ public class EvidenciaService implements IEvidenciaService {
     @Override
     @Transactional
     public void eliminarEvidencia(Long evidenciaId, String emailUsuario) {
-        log.info("Eliminando evidencia {} solicitado por: {}", evidenciaId, emailUsuario);
-
-        Evidencia evidencia = evidenciaRepository.buscarPorId(evidenciaId)
-                .orElseThrow(() -> new OrdenNoEncontradaExcepcion("Evidencia no encontrada: " + evidenciaId));
-
-        Usuario usuario = usuarioRepository.buscarPorEmail(emailUsuario)
-                .orElseThrow(() -> new OrdenNoEncontradaExcepcion(MENSAJE_USUARIO_NO_ENCONTRADO+ emailUsuario));
-
-        // Verificar que el usuario puede eliminar la evidencia
-        if (!usuario.esAdministrador() && !evidencia.getCreadoPor().equals(usuario.getId())) {
-            throw new AccesoNoAutorizadoExcepcion("No tiene permisos para eliminar esta evidencia");
-        }
-
-        // Si es una foto, eliminar el archivo
-        if (evidencia.esFoto() && evidencia.getRutaArchivo() != null) {
-            almacenamientoArchivos.eliminarArchivo(evidencia.getRutaArchivo());
-        }
-
-        evidenciaRepository.eliminar(evidenciaId);
-
-        log.info("Evidencia {} eliminada exitosamente", evidenciaId);
+        log.info("No se pueden eliminar evidencias registradas. Solicitud de eliminación de evidencia {} por usuario: {} fue ignorada.", evidenciaId, emailUsuario);
     }
 
     @Override
