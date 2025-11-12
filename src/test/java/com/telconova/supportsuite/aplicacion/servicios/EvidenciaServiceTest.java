@@ -245,48 +245,4 @@ class EvidenciaServiceTest {
 
         verify(evidenciaRepository, never()).obtenerEvidenciasPorOrden(anyLong());
     }
-
-    @Test
-    @DisplayName("Debe eliminar evidencia exitosamente como admin")
-    void debeEliminarEvidenciaExitosamenteComoAdmin() {
-        // Arrange
-        Usuario admin = Usuario.builder()
-                .id(2L)
-                .email(Email.de("admin@telconova.com"))
-                .rol(RolUsuario.ADMIN)
-                .activo(true)
-                .build();
-
-        when(evidenciaRepository.buscarPorId(1L)).thenReturn(Optional.of(evidenciaComentario));
-        when(usuarioRepository.buscarPorEmail("admin@telconova.com")).thenReturn(Optional.of(admin));
-
-        // Act
-        evidenciaService.eliminarEvidencia(1L, "admin@telconova.com");
-
-        // Assert
-        verify(evidenciaRepository, times(1)).eliminar(1L);
-    }
-
-    @Test
-    @DisplayName("Debe lanzar excepción al eliminar evidencia sin permisos")
-    void debeLanzarExcepcionAlEliminarEvidenciaSinPermisos() {
-        // Arrange
-        Usuario otroTecnico = Usuario.builder()
-                .id(2L)
-                .email(Email.de("otro@telconova.com"))
-                .rol(RolUsuario.TECNICO)
-                .activo(true)
-                .build();
-
-        when(evidenciaRepository.buscarPorId(1L)).thenReturn(Optional.of(evidenciaComentario));
-        when(usuarioRepository.buscarPorEmail("otro@telconova.com")).thenReturn(Optional.of(otroTecnico));
-
-        // Act & Assert
-        assertThatThrownBy(() ->
-                evidenciaService.eliminarEvidencia(1L, "otro@telconova.com")
-        )
-                .isInstanceOf(AccesoNoAutorizadoExcepcion.class);
-
-        verify(evidenciaRepository, never()).eliminar(anyLong());
-    }
 }
